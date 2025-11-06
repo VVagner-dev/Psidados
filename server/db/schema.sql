@@ -1,16 +1,31 @@
 -- ----------------------------------------------------
--- Esquema do Banco de Dados para o Projeto PsiDados
+-- Script Completo: DROP e CREATE para o Projeto PsiDados
 -- Dialeto: PostgreSQL
+-- ----------------------------------------------------
+
+-- ----------------------------------------------------
+-- PARTE 1: APAGAR AS TABELAS (em ordem inversa)
+-- Usamos "CASCADE" para remover dependências (chaves estrangeiras)
+-- ----------------------------------------------------
+
+DROP TABLE IF EXISTS resumos_semanais CASCADE;
+DROP TABLE IF EXISTS respostas_diarias CASCADE;
+DROP TABLE IF EXISTS config_questionarios CASCADE;
+DROP TABLE IF EXISTS pacientes CASCADE;
+DROP TABLE IF EXISTS psicologos CASCADE;
+
+-- ----------------------------------------------------
+-- PARTE 2: CRIAR AS TABELAS (em ordem correta)
 -- ----------------------------------------------------
 
 -- Tabela 1: psicologos
 -- Armazena os dados de login dos profissionais.
 CREATE TABLE psicologos (
-    id SERIAL PRIMARY KEY,  -- Chave primária única (1, 2, 3...)
+    id SERIAL PRIMARY KEY,
     nome VARCHAR(255) NOT NULL,
-    email VARCHAR(255) NOT NULL UNIQUE, -- E-mail deve ser único
-    senha_hash VARCHAR(255) NOT NULL,    -- Senha SEMPRE guardada como hash (bcrypt)
-    crp VARCHAR(50),                     -- Registro profissional (opcional)
+    email VARCHAR(255) NOT NULL UNIQUE,
+    senha_hash VARCHAR(255) NOT NULL,    -- Senha guardada como hash (bcrypt)
+    crp VARCHAR(50) UNIQUE,              -- Registro profissional (deve ser único)
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -19,12 +34,11 @@ CREATE TABLE psicologos (
 CREATE TABLE pacientes (
     id SERIAL PRIMARY KEY,
     nome VARCHAR(255) NOT NULL,
-    email VARCHAR(255),                  -- E-mail do paciente (opcional)
+    email VARCHAR(255) UNIQUE,           -- Email do paciente (opcional, mas único se fornecido)
     codigo_acesso VARCHAR(100) NOT NULL UNIQUE, -- Código de 6-8 dígitos para login
     psicologo_id INTEGER NOT NULL,       -- Chave estrangeira para vincular ao psicólogo
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
 
-    -- Define a relação: pacientes.psicologo_id aponta para psicologos.id
     CONSTRAINT fk_psicologo
         FOREIGN KEY(psicologo_id) 
         REFERENCES psicologos(id)
@@ -32,15 +46,14 @@ CREATE TABLE pacientes (
 );
 
 -- Tabela 3: config_questionarios
--- Define a frequência e as perguntas para CADA paciente.
+-- ATUALIZADA: Adicionada a coluna 'tipo_questionario'
 CREATE TABLE config_questionarios (
     id SERIAL PRIMARY KEY,
     paciente_id INTEGER NOT NULL UNIQUE, -- Configuração única por paciente
     frequencia_dias VARCHAR(20)[] NOT NULL, -- Array de texto: {'segunda', 'quarta', 'sexta'}
-    perguntas JSONB,                     -- JSONB é perfeito para guardar estruturas complexas
-                                         -- Ex: [{'id': 1, 'tipo': 'escala', 'texto': '...'}, ...]
+    tipo_questionario VARCHAR(100) NOT NULL, -- (ex: "questionario1", "questionario2")
+    perguntas JSONB,                     -- JSONB para guardar as perguntas (que vêm do mapa de constantes)
     
-    -- Define a relação: config_questionarios.paciente_id aponta para pacientes.id
     CONSTRAINT fk_paciente
         FOREIGN KEY(paciente_id)
         REFERENCES pacientes(id)
@@ -48,17 +61,13 @@ CREATE TABLE config_questionarios (
 );
 
 -- Tabela 4: respostas_diarias
--- Armazena cada resposta individual dos questionários diários.
+-- ATUALIZADA: Substituídas colunas por 'respostas JSONB'
 CREATE TABLE respostas_diarias (
     id SERIAL PRIMARY KEY,
     paciente_id INTEGER NOT NULL,
     data_resposta TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    nota_humor INTEGER, -- A escala de 1 a 5
-    reflexao_texto TEXT, -- O texto da reflexão diária
-    -- Você pode adicionar mais colunas aqui se tiver mais perguntas
-    -- ex: "resposta_pergunta_2 TEXT", "resposta_pergunta_3 BOOLEAN"
+    respostas JSONB, -- Coluna genérica para guardar (ex: [0,1,2] ou {"humor": 5, "texto": "..."})
     
-    -- Define a relação: respostas_diarias.paciente_id aponta para pacientes.id
     CONSTRAINT fk_paciente
         FOREIGN KEY(paciente_id)
         REFERENCES pacientes(id)
@@ -75,15 +84,15 @@ CREATE TABLE resumos_semanais (
     texto_expectativa TEXT NOT NULL, -- "Quais são suas expectativas para a próxima?"
     analise_ia TEXT,                 -- O texto que será gerado pelo Gemini (inicialmente NULO)
     
-    -- Define a relação: resumos_semanais.paciente_id aponta para pacientes.id
     CONSTRAINT fk_paciente
         FOREIGN KEY(paciente_id)
         REFERENCES pacientes(id)
         ON DELETE CASCADE
 );
 
--- --- Índices para otimizar buscas ---
--- Cria índices para colunas que serão muito usadas em buscas (SELECT ... WHERE ...)
+-- ----------------------------------------------------
+-- PARTE 3: ÍNDICES (para otimizar buscas)
+-- ----------------------------------------------------
 CREATE INDEX idx_pacientes_psicologo_id ON pacientes(psicologo_id);
 CREATE INDEX idx_respostas_paciente_id ON respostas_diarias(paciente_id);
 CREATE INDEX idx_resumos_paciente_id ON resumos_semanais(paciente_id);

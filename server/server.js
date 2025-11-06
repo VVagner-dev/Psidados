@@ -1,64 +1,45 @@
-// Importa o 'path' para resolver caminhos de arquivos
-const path = require('path');
-
-// --- Carregamento de Variáveis de Ambiente ---
-// Diz ao 'dotenv' para carregar o arquivo .env
-// que está no mesmo diretório que este arquivo (server/server.js)
+// --- Importar Módulos ---
+const path = require('path'); // Módulo 'path' nativo do Node.js
+// Configurar o dotenv para ler o .env DENTRO da pasta /server
 require('dotenv').config({ path: path.resolve(__dirname, '.env') });
 
+const express = require('express');
+const cors = require('cors');
+const db = require('./config/db'); // A nossa ligação à base de dados
+
 // --- LINHA DE DIAGNÓSTICO ---
+// (Remover em produção)
 console.log("[DIAGNÓSTICO] Senha lida do .env:", process.env.DB_PASSWORD);
 // --- FIM DA LINHA DE DIAGNÓSTICO ---
 
-// Importa as bibliotecas necessárias
-const express = require('express');
-const cors = require('cors');
-const db = require('./config/db'); // Importa a conexão DB
+
+// --- Importar as Nossas Rotas ---
+const authRoutes = require('./routes/authRoutes');
+const pacienteRoutes = require('./routes/pacienteRoutes');
+const pacienteAuthRoutes = require('./routes/pacienteAuthRoutes');
+const questionarioRoutes = require('./routes/questionarioRoutes');
+const resumoRoutes = require('./routes/resumoRoutes'); // <-- ADICIONADO PARA A IA
 
 // --- Configuração Inicial ---
 const app = express();
 const PORT = process.env.PORT || 3001;
 
 // --- Middlewares Essenciais ---
-app.use(cors());
-app.use(express.json());
+app.use(cors()); // Permite acesso de outros domínios (frontend)
+app.use(express.json()); // Permite ao Express ler JSON do body
+app.use(express.urlencoded({ extended: true })); // Permite ler dados de formulários
 
-// --- Definição das Rotas ---
+// --- Rotas da API ---
+// O Express vai "ligar" os prefixos de URL aos ficheiros de rotas corretos
+app.use('/api/auth', authRoutes); // Login/Registro (Psicólogo)
+app.use('/api/pacientes', pacienteRoutes); // CRUD de Pacientes (Psicólogo)
+app.use('/api/paciente-auth', pacienteAuthRoutes); // Login (Paciente)
+app.use('/api/questionario', questionarioRoutes); // Buscar/Responder Questionário (Paciente)
+app.use('/api/resumo', resumoRoutes); // <-- ADICIONADO PARA A IA (Linha 42)
 
-// Rotas do Psicólogo
-const authRoutes = require('./routes/authRoutes');
-const pacienteRoutes = require('./routes/pacienteRoutes'); // Este arquivo também foi atualizado
-app.use('/api/auth', authRoutes);
-app.use('/api/pacientes', pacienteRoutes);
-
-// Rotas de Autenticação do Paciente
-const pacienteAuthRoutes = require('./routes/pacienteAuthRoutes.js');
-app.use('/api/paciente-auth', pacienteAuthRoutes);
-
-// Rotas do Questionário (Lado do Paciente)
-const questionarioRoutes = require('./routes/questionarioRoutes.js'); // <-- NOVO
-app.use('/api/questionario', questionarioRoutes); // <-- NOVO
-
-
-// --- Rotas de Teste ---
+// --- Rota "Raiz" (Teste) ---
 app.get('/', (req, res) => {
     res.send('API do PsiDados está no ar! 🚀');
-});
-
-app.get('/api/db-test', async (req, res) => {
-    try {
-        const result = await db.query('SELECT NOW()');
-        res.status(200).json({
-            message: 'Conexão com o PostgreSQL (Aiven) bem-sucedida!',
-            db_time: result.rows[0].now,
-        });
-    } catch (err) {
-        console.error('Erro ao conectar ao banco de dados:', err);
-        res.status(500).json({
-            message: 'Erro ao conectar ao banco de dados.',
-            error: err.message,
-        });
-    }
 });
 
 // --- Inicialização do Servidor ---
@@ -66,4 +47,3 @@ app.listen(PORT, () => {
     console.log(`Servidor PsiDados rodando na porta ${PORT}`);
     console.log(`Acesse http://localhost:${PORT} para testar.`);
 });
-
