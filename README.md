@@ -1,155 +1,140 @@
-Projeto PsiDados
+Relatório de Estado do Projeto: PsiDados
 
-1. Conceito Geral do Projeto
+1. Conceito do Projeto
 
-O PsiDados é uma plataforma de prontuário digital inteligente desenhada para servir como uma ponte entre psicólogos e os seus pacientes.
+O PsiDados é uma plataforma de prontuário digital inteligente com dois portais:
 
-O objetivo principal é coletar dados estruturados dos pacientes (através de questionários científicos) e resumos semanais, para que o psicólogo possa usar esses dados — potenciados por uma análise de IA (Gemini) — para otimizar o tratamento e obter insights valiosos.
+Portal do Psicólogo (Gestor): Autentica o profissional (com CRP), permitindo-lhe gerir pacientes (CRUD) e gerar um codigo_acesso único para cada um. O psicólogo configura um plano de questionário (ex: GAD-7) e revê os dados submetidos, incluindo resumos semanais que são automaticamente analisados por IA (Gemini) para gerar insights.
 
-O sistema é dividido em três fluxos principais:
-
-Fluxo 1: O Psicólogo (O Gestor)
-
-Este é o lado profissional da plataforma.
-
-Autenticação: O psicólogo faz login com email, senha e crp.
-
-Gestão de Pacientes: O psicólogo pode criar, ler, atualizar e apagar (CRUD) os seus pacientes.
-
-Geração de Acesso: Ao criar um paciente, o sistema gera um codigo_acesso único (ex: "EXLT5N").
-
-Configuração do Plano: Para cada paciente, o psicólogo define um plano de acompanhamento (escolha do questionário e frequência).
-
-Leitura de Dados: O psicólogo pode aceder a rotas protegidas para ler o histórico de respostas diárias e os resumos semanais (com a análise de IA) de cada paciente.
-
-Fluxo 2: O Paciente (O Coletor de Dados)
-
-Este é o lado simples e focado do paciente, que acede através de um portal ou app separado.
-
-Login Simples: O paciente faz o login usando apenas o codigo_acesso.
-
-Rotina Diária: Nos dias definidos, o paciente responde ao questionário (respostas_diarias).
-
-Rotina Semanal: No final da semana, o paciente escreve um resumo e uma expectativa (resumos_semanais).
-
-Fluxo 3: A IA (O Insight)
-
-Esta é a funcionalidade central que torna o "PsiDados" especial.
-
-Análise Automática: Quando o paciente envia o seu resumo semanal (Tabela 5), o servidor envia esse resumo para a API do Gemini (Google).
-
-Geração de Insight: A IA gera uma análise (de sentimento, temas recorrentes, etc.) e salva-a na coluna analise_ia.
-
-Valor para o Psicólogo: O psicólogo acede ao perfil do paciente e vê não só as respostas, mas também a análise inteligente da IA.
+Portal do Paciente (Coletor): O paciente usa o codigo_acesso para um login simplificado. A sua interface é focada em duas tarefas: (1) Responder ao questionário diário/semanal e (2) Escrever um resumo semanal para análise da IA.
 
 2. Estrutura de Pastas do Projeto
+
+A estrutura foi simplificada para manter o frontend autocontido.
 
 📁 Psidados/
 │
 ├── 📁 client/
-│   │   (Frontend: React, Vue, Angular, etc.)
-│   ├── 📁 public/
-│   └── 📁 src/
-│       └── 📄 App.jsx   (Ponto de entrada do React)
-│
-├── 📁 node_modules/
+│   │
+│   ├── 📁 src/
+│   │   │   ├── 📄 App.jsx       (✅ Toda a aplicação frontend está aqui - ver secção 3)
+│   │   │   ├── 📄 index.css     (✅ Criado - Estilos Tailwind)
+│   │   │   └── 📄 main.jsx      (✅ Criado - Ponto de entrada do React)
+│   │
+│   ├── 📄 .gitignore
+│   ├── 📄 index.html        (✅ Criado - Ponto de entrada do HTML)
+│   ├── 📄 package.json      (✅ Atualizado com react-router-dom)
+│   └── 📄 (outros ficheiros de config: tailwind.config.js, etc.)
 │
 ├── 📁 server/
-│   │
-│   ├── 📁 config/
-│   │   │   └── 📄 db.js
-│   │
-│   ├── 📁 controllers/
-│   │   │   ├── 📄 authController.js
-│   │   │   ├── 📄 pacienteController.js
-│   │   │   ├── 📄 pacienteAuthController.js
-│   │   │   ├── 📄 questionarioController.js
-│   │   │   └── 📄 resumoController.js
-│   │
-│   ├── 📁 db/
-│   │   │   └── 📄 schema.sql
-│   │
-│   ├── 📁 middleware/
-│   │   │   ├── 📄 authMiddleware.js
-│   │   │   └── 📄 pacienteAuthMiddleware.js
-│   │
-│   ├── 📁 routes/
-│   │   │   ├── 📄 authRoutes.js
-│   │   │   ├── 📄 pacienteRoutes.js
-│   │   │   ├── 📄 pacienteAuthRoutes.js
-│   │   │   ├── 📄 questionarioRoutes.js
-│   │   │   └── 📄 resumoRoutes.js
-│   │
+│   │   (Backend: API, controllers, routes, etc.)
 │   ├── 📄 .env
+│   ├── 📄 package.json      (✅ Atualizado com node-fetch)
 │   └── 📄 server.js
 │
 ├── 📄 .gitignore
-├── 📄 package.json
-└── 📄 package-lock.json
+├── 📄 package.json          (✅ Atualizado para gestão monorepo)
+└── 📄 README.md             (Este ficheiro)
 
 
-3. Estado Atual & Próximos Passos
+3. Estado Atual do Código (Concluído)
 
-✅ Estado Atual: Backend Completo (API Pronta)
+Todo o código-fonte, tanto do backend como do frontend, está concluído.
 
-O backend (a API na pasta /server) está agora funcionalmente completo. Todos os três fluxos descritos acima estão implementados e a funcionar:
+✅ Backend (server/) - Funcional
 
-Psicólogo (Gestor):
+O servidor Express (server.js) está a funcionar e a ligar-se com sucesso à base de dados PostgreSQL.
 
-POST /api/auth/registrar (Cria psicólogo)
+Ficheiros Relevantes:
 
-POST /api/auth/login (Login do psicólogo)
+server/package.json: As dependências (incluindo node-fetch) estão corretas.
 
-POST /api/pacientes (Cria paciente)
+server/server.js: O servidor principal está a correr na porta 3001.
 
-GET /api/pacientes (Lista pacientes)
+server/controllers/*.js: Toda a lógica de negócio (incluindo a chamada à API do Gemini) está implementada.
 
-GET /api/pacientes/:id (Vê paciente específico)
+server/routes/*.js: Todas as rotas da API estão definidas e a funcionar.
 
-PUT /api/pacientes/:id (Atualiza paciente)
+✅ Frontend (client/) - Código Concluído
 
-DELETE /api/pacientes/:id (Deleta paciente)
+Toda a aplicação frontend em React foi implementada e consolidada num único ficheiro para simplicidade de gestão neste ambiente.
 
-POST /api/pacientes/:id/questionario (Define o plano)
+Ficheiros Relevantes:
 
-GET /api/pacientes/:id/respostas-diarias (Lê respostas)
+client/src/App.jsx: Contém toda a aplicação React. Inclui o AuthProvider (Contexto de Autenticação), todos os layouts (Psicólogo, Paciente) e todas as páginas (Login, Registo, Dashboards, Formulários de Questionário e Resumo).
 
-GET /api/pacientes/:id/resumos-semanais (Lê resumos e análise da IA)
+client/index.html: O ponto de entrada HTML.
 
-Paciente (Coletor):
+client/src/main.jsx: O script que renderiza o App.jsx no index.html.
 
-POST /api/paciente-auth/login (Login com codigo_acesso)
+client/src/index.css: A configuração base do TailwindCSS.
 
-GET /api/questionario/hoje (Busca questionário do dia)
+client/package.json: Define as dependências do cliente (React, Vite, Tailwind).
 
-POST /api/questionario/responder (Envia respostas diárias)
+4. O Problema Atual (Bloqueio na Instalação)
 
-POST /api/resumo/semanal (Envia resumo semanal)
+O projeto não está "pronto" porque não arranca devido a um erro de instalação de dependências específico do ambiente no frontend.
 
-IA (Insight):
+Servidor [0]: Inicia com sucesso.
 
-A rota POST /api/resumo/semanal chama automaticamente a API do Gemini e guarda a analise_ia na base de dados.
+Cliente [1]: Falha ao iniciar.
 
-🚀 Próximo Passo: Construir o Frontend (client/)
+Erro Principal
 
-Agora que a API está pronta e a funcionar, o próximo passo é construir a interface do utilizador (o "rosto" da aplicação) na pasta client/.
+O log do npm run dev [1] mostra o seguinte erro:
 
-Esta interface terá duas partes principais, que podem ser construídas em qualquer ordem, mas o fluxo do psicólogo é recomendado primeiro:
+[1] Error: The package "@esbuild/win32-x64" could not be found, and is needed by esbuild.
+[1_] ...
+[1] If you are installing esbuild with npm, make sure that you don't specify the
+[1] "--no-optional" or "--omit=optional" flags.
 
-Portal do Psicólogo:
 
-Uma página de Login (para POST /api/auth/login).
+Análise do Erro
 
-Um Dashboard (protegido) que lista os pacientes (de GET /api/pacientes).
+Causa: O vite (o nosso servidor de desenvolvimento frontend) depende do esbuild. O esbuild precisa de um pacote binário específico do sistema operativo (@esbuild/win32-x64 para Windows) que é listado como uma optionalDependency.
 
-Uma página de "Detalhes do Paciente" que mostra os dados de GET /api/pacientes/:id/respostas-diarias e GET /api/pacientes/:id/resumos-semanais.
+Problema: A instalação do npm na pasta client/ está corrompida. Não está a conseguir descarregar ou instalar corretamente este pacote opcional.
 
-Modais ou páginas para criar/editar pacientes e definir os seus questionários.
+Sintomas Anteriores: As nossas tentativas de depuração (como npm rebuild) falharam porque a instalação corrompida também continha scripts postinstall (como o patch-package do rollup) que entravam em conflito com os ficheiros bloqueados (EBUSY) no seu sistema.
 
-Portal do Paciente:
+5. Próximo Passo (Corrigir o Ambiente do Cliente)
 
-Uma página de Login simples que pede apenas o codigo_acesso (para POST /api/paciente-auth/login).
+O próximo e último passo é forçar uma reinstalação limpa e completa das dependências do cliente para garantir que o esbuild é instalado corretamente.
 
-Uma página principal que mostra o questionário do dia (de GET /api/questionario/hoje).
+Plano de Ação (A executar no terminal):
 
-Uma página para o resumo semanal (para POST /api/resumo/semanal).
+Parar o processo: Pressione Ctrl + C no terminal.
+
+Limpar a cache do npm: (Garante que não usamos pacotes corrompidos guardados)
+
+npm cache clean --force
+
+
+Navegar para a pasta client:
+
+cd client
+
+
+Limpar a instalação antiga: (Apaga os ficheiros corrompidos)
+
+rmdir /s /q node_modules
+del package-lock.json
+
+
+(É crucial que esteja dentro da pasta client ao executar isto).
+
+Reinstalar o cliente: (Isto irá descarregar o esbuild de novo. Desta vez, estamos a usar o client/package.json simplificado que já não tem o patch-package a causar conflitos).
+
+npm install
+
+
+(Execute este comando dentro da pasta client).
+
+Voltar à raiz do projeto:
+
+cd ..
+
+
+Inicie o projeto:
+
+npm run dev
