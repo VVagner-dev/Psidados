@@ -18,98 +18,138 @@ Gestão de Pacientes: O psicólogo pode criar, ler, atualizar e apagar (CRUD) os
 
 Geração de Acesso: Ao criar um paciente, o sistema gera um codigo_acesso único (ex: "EXLT5N").
 
-Configuração do Plano: Esta é a funcionalidade-chave. Para cada paciente, o psicólogo define um plano de acompanhamento:
+Configuração do Plano: Para cada paciente, o psicólogo define um plano de acompanhamento (escolha do questionário e frequência).
 
-Escolha do Questionário: O psicólogo escolhe 1 de 3 questionários científicos pré-definidos (identificados no backend como: "questionario1", "questionario2", "questionario3").
-
-Definição da Frequência: O psicólogo define uma frequência de exatamente 3 dias por semana (ex: ["segunda", "quarta", "sexta"]) em que o paciente deve responder.
+Leitura de Dados: O psicólogo pode aceder a rotas protegidas para ler o histórico de respostas diárias e os resumos semanais (com a análise de IA) de cada paciente.
 
 Fluxo 2: O Paciente (O Coletor de Dados)
 
 Este é o lado simples e focado do paciente, que acede através de um portal ou app separado.
 
-Login Simples: O paciente não tem uma conta complexa. Ele faz o login usando apenas o codigo_acesso (ex: "EXLT5N") que o psicólogo lhe forneceu.
+Login Simples: O paciente faz o login usando apenas o codigo_acesso.
 
-Rotina Diária: Nos 3 dias definidos pelo psicólogo, a plataforma apresenta o questionário do dia (GET /api/questionario/hoje). O paciente submete as suas respostas, que são guardadas na tabela respostas_diarias.
+Rotina Diária: Nos dias definidos, o paciente responde ao questionário (respostas_diarias).
 
-Rotina Semanal: No final da semana, o paciente é solicitado a escrever um texto_resumo (sobre a semana que passou) e as suas expectativas (texto_expectativa), que são guardados na Tabela 5: resumos_semanais.
+Rotina Semanal: No final da semana, o paciente escreve um resumo e uma expectativa (resumos_semanais).
 
 Fluxo 3: A IA (O Insight)
 
-Esta é a funcionalidade central que torna o "PsiDados" especial e justifica o seu nome.
+Esta é a funcionalidade central que torna o "PsiDados" especial.
 
-Análise Automática: Quando o paciente envia o seu resumo semanal (Tabela 5), o seu servidor não se limita a guardá-lo.
+Análise Automática: Quando o paciente envia o seu resumo semanal (Tabela 5), o servidor envia esse resumo para a API do Gemini (Google).
 
-Ele automaticamente envia esse resumo para a API do Gemini (Google).
+Geração de Insight: A IA gera uma análise (de sentimento, temas recorrentes, etc.) e salva-a na coluna analise_ia.
 
-A IA (Gemini) lê o texto do paciente e gera uma análise (de sentimento, temas recorrentes, etc.), que é guardada na coluna analise_ia.
-
-Valor para o Psicólogo: O psicólogo, ao preparar-se para a sessão, acede ao perfil do paciente e vê não só as respostas diárias, mas também um resumo e uma análise inteligente da semana do paciente, o que lhe poupa tempo e lhe dá insights valiosos.
+Valor para o Psicólogo: O psicólogo acede ao perfil do paciente e vê não só as respostas, mas também a análise inteligente da IA.
 
 2. Estrutura de Pastas do Projeto
 
-A arquitetura do projeto segue um modelo monorepo com uma separação clara entre client (frontend) e server (backend).
-
-📁 Psidados/  (Pasta Raiz)
+📁 Psidados/
 │
 ├── 📁 client/
 │   │   (Frontend: React, Vue, Angular, etc.)
 │   ├── 📁 public/
 │   └── 📁 src/
+│       └── 📄 App.jsx   (Ponto de entrada do React)
 │
 ├── 📁 node_modules/
-│   │   (Dependências do Node.js, instaladas via `npm install` na raiz)
 │
-├── 📁 server/  (Onde vive toda a API de backend)
+├── 📁 server/
 │   │
 │   ├── 📁 config/
-│   │   │   └── 📄 db.js         (A sua conexão real com o Aiven, usando 'pg')
+│   │   │   └── 📄 db.js
 │   │
 │   ├── 📁 controllers/
-│   │   │   ├── 📄 authController.js        (Login/Registro do Psicólogo)
-│   │   │   ├── 📄 pacienteController.js    (CRUD de Pacientes)
-│   │   │   ├── 📄 pacienteAuthController.js (Login do Paciente)
-│   │   │   └── 📄 questionarioController.js (Definir/Buscar/Responder Questionários)
+│   │   │   ├── 📄 authController.js
+│   │   │   ├── 📄 pacienteController.js
+│   │   │   ├── 📄 pacienteAuthController.js
+│   │   │   ├── 📄 questionarioController.js
+│   │   │   └── 📄 resumoController.js
 │   │
 │   ├── 📁 db/
-│   │   │   └── 📄 schema.sql      (O "mapa" de referência do banco de dados)
+│   │   │   └── 📄 schema.sql
 │   │
 │   ├── 📁 middleware/
-│   │   │   ├── 📄 authMiddleware.js        (Segurança para rotas do Psicólogo)
-│   │   │   └── 📄 pacienteAuthMiddleware.js (Segurança para rotas do Paciente)
+│   │   │   ├── 📄 authMiddleware.js
+│   │   │   └── 📄 pacienteAuthMiddleware.js
 │   │
 │   ├── 📁 routes/
-│   │   │   ├── 📄 authRoutes.js            (Rotas /api/auth/*)
-│   │   │   ├── 📄 pacienteRoutes.js        (Rotas /api/pacientes/*)
-│   │   │   ├── 📄 pacienteAuthRoutes.js    (Rotas /api/paciente-auth/*)
-│   │   │   └── 📄 questionarioRoutes.js    (Rotas /api/questionario/*)
+│   │   │   ├── 📄 authRoutes.js
+│   │   │   ├── 📄 pacienteRoutes.js
+│   │   │   ├── 📄 pacienteAuthRoutes.js
+│   │   │   ├── 📄 questionarioRoutes.js
+│   │   │   └── 📄 resumoRoutes.js
 │   │
-│   ├── 📄 .env              (Ficheiro de segredos: Senhas do DB, JWT_SECRET)
-│   └── 📄 server.js         (Arquivo principal que inicia o Express)
+│   ├── 📄 .env
+│   └── 📄 server.js
 │
 ├── 📄 .gitignore
-├── 📄 package.json      (O ficheiro principal do projeto, com os scripts 'dev' e 'start')
+├── 📄 package.json
 └── 📄 package-lock.json
 
 
-3. Estado Atual & Próximos Passos Técnicos
+3. Estado Atual & Próximos Passos
 
-O projeto tem a autenticação e o CRUD do psicólogo funcionais, bem como a configuração e busca de questionários.
+✅ Estado Atual: Backend Completo (API Pronta)
 
-O Próximo Desafio Técnico (Importante):
-O schema.sql (na Tabela 4: respostas_diarias) foi desenhado originalmente com colunas fixas (nota_humor, reflexao_texto). Isto só funciona para o questionário "questionario3" (diário simples).
+O backend (a API na pasta /server) está agora funcionalmente completo. Todos os três fluxos descritos acima estão implementados e a funcionar:
 
-Para suportar as respostas dos questionários "questionario1" e "questionario2" (que são arrays de números, ex: [0, 1, 2, 0, 3]), a Tabela 4 precisa ser alterada.
+Psicólogo (Gestor):
 
-Próximo Passo Sugerido:
-Executar o seguinte SQL no banco de dados Aiven para tornar a tabela de respostas flexível:
+POST /api/auth/registrar (Cria psicólogo)
 
--- Remover as colunas antigas e específicas
-ALTER TABLE respostas_diarias DROP COLUMN IF EXISTS nota_humor;
-ALTER TABLE respostas_diarias DROP COLUMN IF EXISTS reflexao_texto;
+POST /api/auth/login (Login do psicólogo)
 
--- Adicionar a nova coluna genérica
-ALTER TABLE respostas_diarias ADD COLUMN IF NOT EXISTS respostas JSONB;
+POST /api/pacientes (Cria paciente)
 
+GET /api/pacientes (Lista pacientes)
 
-Após esta alteração, o próximo passo de código é implementar a rota POST /api/questionario/responder.
+GET /api/pacientes/:id (Vê paciente específico)
+
+PUT /api/pacientes/:id (Atualiza paciente)
+
+DELETE /api/pacientes/:id (Deleta paciente)
+
+POST /api/pacientes/:id/questionario (Define o plano)
+
+GET /api/pacientes/:id/respostas-diarias (Lê respostas)
+
+GET /api/pacientes/:id/resumos-semanais (Lê resumos e análise da IA)
+
+Paciente (Coletor):
+
+POST /api/paciente-auth/login (Login com codigo_acesso)
+
+GET /api/questionario/hoje (Busca questionário do dia)
+
+POST /api/questionario/responder (Envia respostas diárias)
+
+POST /api/resumo/semanal (Envia resumo semanal)
+
+IA (Insight):
+
+A rota POST /api/resumo/semanal chama automaticamente a API do Gemini e guarda a analise_ia na base de dados.
+
+🚀 Próximo Passo: Construir o Frontend (client/)
+
+Agora que a API está pronta e a funcionar, o próximo passo é construir a interface do utilizador (o "rosto" da aplicação) na pasta client/.
+
+Esta interface terá duas partes principais, que podem ser construídas em qualquer ordem, mas o fluxo do psicólogo é recomendado primeiro:
+
+Portal do Psicólogo:
+
+Uma página de Login (para POST /api/auth/login).
+
+Um Dashboard (protegido) que lista os pacientes (de GET /api/pacientes).
+
+Uma página de "Detalhes do Paciente" que mostra os dados de GET /api/pacientes/:id/respostas-diarias e GET /api/pacientes/:id/resumos-semanais.
+
+Modais ou páginas para criar/editar pacientes e definir os seus questionários.
+
+Portal do Paciente:
+
+Uma página de Login simples que pede apenas o codigo_acesso (para POST /api/paciente-auth/login).
+
+Uma página principal que mostra o questionário do dia (de GET /api/questionario/hoje).
+
+Uma página para o resumo semanal (para POST /api/resumo/semanal).

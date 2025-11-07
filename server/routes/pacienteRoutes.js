@@ -1,36 +1,47 @@
-// --- Rotas de Pacientes (CRUD e Configs) ---
-
 const express = require('express');
 const router = express.Router();
 
-// Controladores
-const {
-    criarPaciente,
-    listarPacientes,
-    obterPaciente,
-    atualizarPaciente,
-    deletarPaciente
-} = require('../controllers/pacienteController.js');
+// --- Importações dos Controladores ---
 
-// IMPORTA a nova função do outro controller
-const { definirQuestionario } = require('../controllers/questionarioController.js');
+// 1. Funções do pacienteController (Isto está correto)
+const { 
+    criarPaciente, 
+    listarPacientes, 
+    buscarPacientePorId, 
+    atualizarPaciente, 
+    deletarPaciente,
+    buscarRespostasDoPaciente,
+    buscarResumosSemanaisDoPaciente
+} = require('../controllers/pacienteController');
 
-// Middleware (do Psicólogo)
-const { proteger } = require('../middleware/authMiddleware.js');
+// 2. Funções do questionarioController (Isto está correto)
+const { definirQuestionario } = require('../controllers/questionarioController');
 
-// Aplicar o middleware de proteção do PSICÓLOGO em todas as rotas
-router.use(proteger);
+// 3. Importar o middleware de autenticação do Psicólogo
+// (ESTA ERA A LINHA COM ERRO)
+// O nome da função exportada é 'authMiddleware'.
+const { authMiddleware } = require('../middleware/authMiddleware');
 
-// --- CRUD de Pacientes ---
-router.post('/', criarPaciente);
-router.get('/', listarPacientes);
-router.get('/:id', obterPaciente);
-router.put('/:id', atualizarPaciente);
-router.delete('/:id', deletarPaciente);
 
-// --- Configuração do Questionário (A LINHA QUE FALTAVA) ---
+// --- Rotas CRUD para Pacientes (Protegidas) ---
+// (Usando a variável 'authMiddleware' importada corretamente)
+router.post('/', authMiddleware, criarPaciente);
+router.get('/', authMiddleware, listarPacientes);
+router.get('/:id', authMiddleware, buscarPacientePorId);
+router.put('/:id', authMiddleware, atualizarPaciente);
+router.delete('/:id', authMiddleware, deletarPaciente);
+
+// --- Rota de Configuração (Protegida) ---
 // POST /api/pacientes/:id/questionario
-router.post('/:id/questionario', definirQuestionario);
+router.post('/:id/questionario', authMiddleware, definirQuestionario);
+
+// --- Rotas de Leitura de Dados (Protegidas) ---
+
+// GET /api/pacientes/:id/respostas-diarias
+router.get('/:id/respostas-diarias', authMiddleware, buscarRespostasDoPaciente);
+
+// GET /api/pacientes/:id/resumos-semanais
+router.get('/:id/resumos-semanais', authMiddleware, buscarResumosSemanaisDoPaciente);
+
 
 module.exports = router;
-

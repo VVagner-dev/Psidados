@@ -1,18 +1,15 @@
-const db = require('../config/db'); // A nossa ligação à base de dados
+const db = require('../config/db');
 
-// Função de utilitário para obter o dia da semana em 'pt-BR' (ex: 'segunda')
+// Função de utilitário para obter o dia da semana em 'pt-BR'
 function getDayOfWeek() {
     const days = ['domingo', 'segunda', 'terca', 'quarta', 'quinta', 'sexta', 'sabado'];
-    // Ajustar para o fuso horário de Brasília (UTC-3)
     const now = new Date(new Date().toLocaleString("en-US", {timeZone: "America/Sao_Paulo"}));
     return days[now.getDay()];
 }
 
-// -----------------------------------------------------------------
 // MAPA DOS QUESTIONÁRIOS CIENTÍFICOS
-// -----------------------------------------------------------------
 const QUESTIONARIOS_CIENTIFICOS = {
-    "questionario1": { // Patient Health Questionnaire-9 (Depressão)
+    "questionario1": {
         "titulo": "Questionário sobre a Saúde do Paciente (PHQ-9)",
         "tipo": "escala", 
         "opcoes": ["Nenhuma vez", "Vários dias", "Mais de metade dos dias", "Quase todos os dias"],
@@ -28,7 +25,7 @@ const QUESTIONARIOS_CIENTIFICOS = {
             "9. Pensamentos de que seria melhor estar morto(a) ou de se ferir de alguma maneira"
         ]
     },
-    "questionario2": { // Generalized Anxiety Disorder-7 (Ansiedade)
+    "questionario2": {
         "titulo": "Escala de Transtorno de Ansiedade Generalizada (GAD-7)",
         "tipo": "escala", 
         "opcoes": ["Nenhuma vez", "Vários dias", "Mais de metade dos dias", "Quase todos os dias"],
@@ -42,7 +39,7 @@ const QUESTIONARIOS_CIENTIFICOS = {
             "7. Sentir medo, como se algo horrível fosse acontecer"
         ]
     },
-    "questionario3": { // Um diário simples de humor e reflexão
+    "questionario3": {
         "titulo": "Diário de Humor e Reflexão",
         "tipo": "misto",
         "perguntas": [
@@ -59,33 +56,41 @@ const QUESTIONARIOS_CIENTIFICOS = {
  */
 const definirQuestionario = async (req, res) => {
     try {
-        const { id: pacienteId } = req.params; // ID do paciente vindo da URL
-        const psicologoId = req.psicologo.id; // ID do psicólogo vindo do token (middleware)
+        const { id: pacienteId } = req.params;
+        const psicologoId = req.psicologo.id;
         const { frequencia_dias, tipo_questionario } = req.body;
 
         // 1. Validação da Frequência
         if (!frequencia_dias || !Array.isArray(frequencia_dias) || frequencia_dias.length !== 3) {
-            return res.status(400).json({ message: "É obrigatório enviar um array 'frequencia_dias' com exatamente 3 dias da semana (ex: ['segunda', 'quarta', 'sexta'])." });
+            return res.status(400).json({ 
+                message: "É obrigatório enviar um array 'frequencia_dias' com exatamente 3 dias da semana (ex: ['segunda', 'quarta', 'sexta'])." 
+            });
         }
 
         // 2. Validação do Tipo de Questionário
         if (!tipo_questionario || !QUESTIONARIOS_CIENTIFICOS[tipo_questionario]) {
             return res.status(400).json({ 
                 message: "Tipo de questionário inválido.",
-                opcoes_validas: Object.keys(QUESTIONARIOS_CIENTIFICOS) // ex: ["questionario1", "questionario2", "questionario3"]
+                opcoes_validas: Object.keys(QUESTIONARIOS_CIENTIFICOS)
             });
         }
 
         // 3. Verificar se o psicólogo é dono deste paciente
-        const pacienteResult = await db.query('SELECT * FROM pacientes WHERE id = $1 AND psicologo_id = $2', [pacienteId, psicologoId]);
+        const pacienteResult = await db.query(
+            'SELECT * FROM pacientes WHERE id = $1 AND psicologo_id = $2', 
+            [pacienteId, psicologoId]
+        );
+        
         if (pacienteResult.rows.length === 0) {
-            return res.status(404).json({ message: "Paciente não encontrado ou não pertence a este psicólogo." });
+            return res.status(404).json({ 
+                message: "Paciente não encontrado ou não pertence a este psicólogo." 
+            });
         }
 
         // 4. Pegar o JSON completo do questionário
         const perguntasJSON = QUESTIONARIOS_CIENTIFICOS[tipo_questionario];
 
-        // 5. Salvar no banco (UPSERT: Atualiza se existir, Insere se não existir)
+        // 5. Salvar no banco (UPSERT)
         const upsertQuery = `
             INSERT INTO config_questionarios (paciente_id, frequencia_dias, tipo_questionario, perguntas)
             VALUES ($1, $2, $3, $4)
@@ -118,10 +123,9 @@ const definirQuestionario = async (req, res) => {
  */
 const buscarQuestionarioDoDia = async (req, res) => {
     try {
-        const pacienteId = req.paciente.id; // ID do paciente vindo do token (middleware)
+        const pacienteId = req.paciente.id;
         const diaDaSemana = getDayOfWeek(); 
 
-        // 1. Busca a configuração do paciente
         const query = `
             SELECT * FROM config_questionarios 
             WHERE paciente_id = $1 AND $2 = ANY(frequencia_dias);
@@ -137,7 +141,7 @@ const buscarQuestionarioDoDia = async (req, res) => {
         
         const configuracao = result.rows[0];
         
-        // 2. Verificar se o paciente já respondeu hoje (Compara apenas a DATA)
+        // Verificar se o paciente já respondeu hoje
         const queryJaRespondeu = `
             SELECT * FROM respostas_diarias 
             WHERE paciente_id = $1 AND data_resposta::date = CURRENT_DATE;
@@ -145,16 +149,15 @@ const buscarQuestionarioDoDia = async (req, res) => {
         const respostaHoje = await db.query(queryJaRespondeu, [pacienteId]);
         
         if (respostaHoje.rows.length > 0) {
-             return res.status(200).json({
+            return res.status(200).json({
                 temQuestionarioHoje: false, 
                 message: "Você já enviou a sua resposta de hoje."
             });
         }
 
-        // 3. Retorna o questionário
         res.status(200).json({
             temQuestionarioHoje: true,
-            questionario: configuracao.perguntas // Retorna o JSON das perguntas
+            questionario: configuracao.perguntas
         });
 
     } catch (error) {
@@ -163,10 +166,6 @@ const buscarQuestionarioDoDia = async (req, res) => {
     }
 };
 
-
-// -----------------------------------------------------------------
-// NOVA FUNÇÃO ADICIONADA
-// -----------------------------------------------------------------
 /**
  * @route   POST /api/questionario/responder
  * @desc    (Paciente) Salva as respostas do questionário diário
@@ -174,15 +173,16 @@ const buscarQuestionarioDoDia = async (req, res) => {
  */
 const salvarRespostaDiaria = async (req, res) => {
     try {
-        const pacienteId = req.paciente.id; // ID do paciente vindo do token
-        const { respostas } = req.body; // O JSON com as respostas
+        const pacienteId = req.paciente.id;
+        const { respostas } = req.body;
 
-        // 1. Validação simples
         if (!respostas) {
-            return res.status(400).json({ message: "O campo 'respostas' (contendo o JSON das respostas) é obrigatório." });
+            return res.status(400).json({ 
+                message: "O campo 'respostas' (contendo o JSON das respostas) é obrigatório." 
+            });
         }
         
-        // 2. Verificar se o paciente já respondeu hoje
+        // Verificar se o paciente já respondeu hoje
         const queryJaRespondeu = `
             SELECT * FROM respostas_diarias 
             WHERE paciente_id = $1 AND data_resposta::date = CURRENT_DATE;
@@ -190,12 +190,12 @@ const salvarRespostaDiaria = async (req, res) => {
         const respostaHoje = await db.query(queryJaRespondeu, [pacienteId]);
         
         if (respostaHoje.rows.length > 0) {
-             return res.status(409).json({ // 409 Conflict (Conflito)
+            return res.status(409).json({
                 message: "Você já enviou a sua resposta de hoje."
             });
         }
 
-        // 3. Salvar no banco (na coluna 'respostas' que agora é JSONB)
+        // Salvar no banco
         const query = `
             INSERT INTO respostas_diarias (paciente_id, respostas)
             VALUES ($1, $2)
@@ -216,9 +216,16 @@ const salvarRespostaDiaria = async (req, res) => {
     }
 };
 
+// EXPORTAÇÃO com LOG DE DEBUG
+console.log('🔍 [questionarioController.js] Verificando funções antes de exportar:');
+console.log('   definirQuestionario:', typeof definirQuestionario);
+console.log('   buscarQuestionarioDoDia:', typeof buscarQuestionarioDoDia);
+console.log('   salvarRespostaDiaria:', typeof salvarRespostaDiaria);
 
 module.exports = {
     definirQuestionario,
     buscarQuestionarioDoDia,
-    salvarRespostaDiaria // 4. Adicionamos a nova função ao 'module.exports'
+    salvarRespostaDiaria
 };
+
+console.log('✅ [questionarioController.js] Funções exportadas com sucesso!');
