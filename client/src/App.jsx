@@ -6,8 +6,11 @@ import {
 import { 
   Users, LogIn, LogOut, FileText, 
   ChevronRight, Brain, User, KeyRound, ArrowLeft, 
-  Settings, Trash2, Edit, UserPlus, Save
+  Settings, Trash2, Edit, UserPlus, Save,
+  BugPlay, AlertCircle
 } from 'lucide-react';
+import TestPanel from './components/TestPanel';
+import { useTestMode } from './contexts/TestModeContext';
 
 // --- AUTENTICAÇÃO ---
 
@@ -16,6 +19,38 @@ const AuthContext = createContext(null);
 
 const useAuth = () => {
   return useContext(AuthContext);
+};
+
+// Função para logs persistentes
+const persistentLog = (type, ...args) => {
+  const log = {
+    timestamp: new Date().toISOString(),
+    type,
+    message: args.map(arg => 
+      typeof arg === 'object' ? JSON.stringify(arg) : String(arg)
+    ).join(' ')
+  };
+  
+  // Manter logs no localStorage
+  const logs = JSON.parse(localStorage.getItem('debug_logs') || '[]');
+  logs.push(log);
+  localStorage.setItem('debug_logs', JSON.stringify(logs.slice(-50))); // Manter últimos 50 logs
+  
+  // Log normal no console
+  console[type](...args);
+};
+
+// Parser seguro que evita 'Unexpected end of JSON input' quando o servidor
+// retorna uma resposta vazia ou HTML de erro. Disponível em todo o módulo.
+const safeParseResponse = async (response) => {
+  const text = await response.text();
+  let data = {};
+  try {
+    data = text ? JSON.parse(text) : {};
+  } catch (e) {
+    data = { message: text };
+  }
+  return { ok: response.ok, status: response.status, data, headers: response.headers };
 };
 
 // 2. Provedor de Autenticação
@@ -32,15 +67,57 @@ const AuthProvider = ({ children }) => {
   });
   
   // Estado para o paciente logado
-  const [paciente, setPaciente] = useState(() => {
-     try {
-      const stored = localStorage.getItem('paciente-token');
-      return stored ? JSON.parse(stored) : null;
-    } catch (e) {
-      console.error("Falha ao ler 'paciente-token' do localStorage", e);
-      return null;
-    }
-  });
+  const [paciente, setPaciente] = useState(null);
+  const [isLoadingAuth, setIsLoadingAuth] = useState(true);
+
+  // Efeito para carregar e validar o token do paciente
+  useEffect(() => {
+    const loadAndValidateToken = async () => {
+      try {
+        const stored = localStorage.getItem('paciente-token');
+        if (!stored) {
+          setIsLoadingAuth(false);
+          return;
+        }
+
+        const parsedData = JSON.parse(stored);
+        if (!parsedData || !parsedData.token) {
+          console.error("Dados do paciente inválidos no localStorage");
+          localStorage.removeItem('paciente-token');
+          setIsLoadingAuth(false);
+          return;
+        }
+
+        // Tentar validar o token com o servidor
+        try {
+          const response = await fetch('/api/questionario/hoje', {
+            headers: {
+              'Authorization': `Bearer ${parsedData.token}`
+            }
+          });
+
+          if (!response.ok) {
+            console.error("Token inválido ou expirado");
+            localStorage.removeItem('paciente-token');
+            setPaciente(null);
+          } else {
+            setPaciente(parsedData);
+          }
+        } catch (error) {
+          console.error("Erro ao validar token:", error);
+          localStorage.removeItem('paciente-token');
+          setPaciente(null);
+        }
+      } catch (e) {
+        console.error("Falha ao processar token do paciente:", e);
+        localStorage.removeItem('paciente-token');
+      } finally {
+        setIsLoadingAuth(false);
+      }
+    };
+
+    loadAndValidateToken();
+  }, []);
   
   // Efeitos para salvar no localStorage
   useEffect(() => {
@@ -64,6 +141,8 @@ const AuthProvider = ({ children }) => {
   }, [paciente]);
 
   // --- Funções de Login ---
+  // --- Funções de Login ---
+
   const loginPsicologo = async (email, crp, senha) => {
     try {
       const response = await fetch('/api/auth/login', {
@@ -71,7 +150,7 @@ const AuthProvider = ({ children }) => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, crp, senha }),
       });
-      const data = await response.json();
+      const { data } = await safeParseResponse(response);
       if (!response.ok) throw new Error(data.message || 'Credenciais inválidas.');
       setPsicologo({ token: data.token, nome: data.nome || 'Psicólogo(a)' });
       return { success: true };
@@ -82,16 +161,55 @@ const AuthProvider = ({ children }) => {
 
   const loginPaciente = async (codigoAcesso) => {
     try {
+      console.log('Iniciando processo de login do paciente...');
+      
+      if (!codigoAcesso) {
+        throw new Error('Código de acesso é obrigatório');
+      }
+
+      // 1. Fazer login
+      console.log('Fazendo requisição de login...');
       const response = await fetch('/api/paciente-auth/login', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ codigo_acesso: codigoAcesso }),
+        headers: { 
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ codigo_acesso: codigoAcesso })
       });
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.message || 'Código de acesso inválido.');
-      setPaciente({ token: data.token, nome: data.nome || 'Paciente' });
+      
+      console.log('Resposta recebida, status:', response.status);
+      const { data } = await safeParseResponse(response);
+      console.log('Dados da resposta:', data);
+      
+      if (!response.ok) {
+        throw new Error(data.message || 'Código de acesso inválido.');
+      }
+      
+      if (!data.token) {
+        throw new Error('Token não recebido do servidor');
+      }
+
+      // 2. Primeiro preparar e salvar os dados do paciente
+      const userDataForStorage = {
+        token: data.token,
+        nome: data.paciente?.nome || 'Paciente',
+        id: data.paciente?.id,
+        email: data.paciente?.email,
+        tipo: 'paciente',
+        loginTime: new Date().toISOString()
+      };
+      
+      console.log('Salvando dados do paciente...');
+      localStorage.setItem('paciente-token', JSON.stringify(userDataForStorage));
+      setPaciente(userDataForStorage);
+
+      console.log('Login concluído com sucesso');
       return { success: true };
+      
     } catch (error) {
+      console.error('Erro durante o processo de login:', error);
+      localStorage.removeItem('paciente-token');
+      setPaciente(null);
       return { success: false, message: error.message };
     }
   };
@@ -122,17 +240,18 @@ const ProtectedPsicologoRoute = () => {
   return <PsicologoLayout />;
 };
 
-// 4. Rota Protegida do Paciente
+  // 4. Rota Protegida do Paciente
 const ProtectedPacienteRoute = () => {
   const { paciente } = useAuth();
   const location = useLocation();
-  if (!paciente) {
+  const navigate = useNavigate();
+
+  if (!paciente?.token) {
     return <Navigate to="/login-paciente" state={{ from: location }} replace />;
   }
+
   return <PacienteLayout />;
 };
-
-
 // --- LAYOUTS ---
 
 // 5. Layouts (Wrappers com Navbar/Menu)
@@ -191,6 +310,12 @@ const PacienteLayout = () => {
   
   const isQuestionario = location.pathname.endsWith('questionario');
   const isResumo = location.pathname.endsWith('resumo');
+  const [podeVerResumo, setPodeVerResumo] = useState(false);
+
+  useEffect(() => {
+    const mostrarResumo = sessionStorage.getItem('mostrarResumo') === 'true';
+    setPodeVerResumo(mostrarResumo);
+  }, [location.pathname]);
 
   return (
     <div className="min-h-screen bg-teal-50 flex flex-col items-center justify-center p-4">
@@ -222,12 +347,14 @@ const PacienteLayout = () => {
           >
             Questionário Diário
           </Link>
-          <Link 
-            to="/paciente/resumo"
-            className={`px-5 py-2 rounded-md font-medium ${isResumo ? 'bg-teal-600 text-white shadow' : 'bg-white text-gray-700 hover:bg-gray-50'}`}
-          >
-            Resumo Semanal
-          </Link>
+          {podeVerResumo && (
+            <Link 
+              to="/paciente/resumo"
+              className={`px-5 py-2 rounded-md font-medium ${isResumo ? 'bg-teal-600 text-white shadow' : 'bg-white text-gray-700 hover:bg-gray-50'}`}
+            >
+              Resumo Semanal
+            </Link>
+          )}
         </div>
         <Outlet />
       </div>
@@ -240,6 +367,8 @@ const PacienteLayout = () => {
 
 // ( / )
 const Home = () => {
+  const { isTestMode, toggleTestMode } = useTestMode();
+
   return (
     <div className="min-h-screen bg-gray-100 flex items-center justify-center">
       <div className="text-center p-10 bg-white rounded-lg shadow-xl">
@@ -266,15 +395,40 @@ const Home = () => {
             Portal do Paciente
           </Link>
         </div>
-         <div className="mt-6">
-            <Link
-              to="/registrar-psicologo"
-              className="text-sm text-teal-600 hover:underline"
+        <div className="mt-6">
+          <Link
+            to="/registrar-psicologo"
+            className="text-sm text-teal-600 hover:underline"
+          >
+            É psicólogo? Crie sua conta
+          </Link>
+        </div>
+        {process.env.NODE_ENV === 'development' && (
+          <div className="mt-6 pt-6 border-t">
+            <button
+              onClick={toggleTestMode}
+              className={`flex items-center justify-center px-4 py-2 rounded-md text-sm font-medium transition duration-300 ${
+                isTestMode
+                  ? 'bg-yellow-100 text-yellow-800 hover:bg-yellow-200'
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              }`}
             >
-              É psicólogo? Crie sua conta
-            </Link>
+              {isTestMode ? (
+                <>
+                  <AlertCircle className="w-4 h-4 mr-2" />
+                  Modo de Teste Ativo
+                </>
+              ) : (
+                <>
+                  <BugPlay className="w-4 h-4 mr-2" />
+                  Ativar Modo de Teste
+                </>
+              )}
+            </button>
           </div>
+        )}
       </div>
+      <TestPanel />
     </div>
   );
 };
@@ -379,24 +533,62 @@ const LoginPsicologo = () => {
 // ( /login-paciente )
 const LoginPaciente = () => {
   const navigate = useNavigate();
-  const location = useLocation();
   const { loginPaciente } = useAuth();
   const [codigo, setCodigo] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [successMessage, setSuccessMessage] = useState('');
+  const [debugInfo, setDebugInfo] = useState([]);
 
-  const from = location.state?.from?.pathname || '/paciente/questionario';
+  // Função para adicionar informações de debug
+  const addDebugInfo = (message, type = 'info') => {
+    const timestamp = new Date().toISOString();
+    setDebugInfo(prev => [...prev, { timestamp, message, type }]);
+    persistentLog(type, message);
+  };
+
+  useEffect(() => {
+    // Limpar logs antigos ao montar o componente
+    setDebugInfo([]);
+    localStorage.removeItem('debug_logs');
+  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
+    setSuccessMessage('');
     setIsLoading(true);
-    const resultado = await loginPaciente(codigo);
-    setIsLoading(false);
-    if (resultado.success) {
-      navigate(from, { replace: true });
-    } else {
-      setError(resultado.message || 'Código de acesso inválido.');
+
+    addDebugInfo('=== Início do processo de login do paciente ===');
+    addDebugInfo(`Tentando login com código: ${codigo}`);
+
+    try {
+      // Tentar fazer login
+      const resultado = await loginPaciente(codigo);
+      addDebugInfo('Resultado do login: ' + JSON.stringify(resultado));
+
+      if (!resultado.success) {
+        addDebugInfo('Falha no login: ' + resultado.message, 'error');
+        setError(resultado.message || 'Código de acesso inválido.');
+        setIsLoading(false);
+        return;
+      }
+
+      addDebugInfo('Login bem-sucedido!');
+      setSuccessMessage('Login bem-sucedido! Redirecionando...');
+      
+      // Aguardar 1 segundo antes de redirecionar
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      addDebugInfo('Redirecionando para /paciente/questionario');
+      navigate('/paciente/questionario', { 
+        replace: true,
+        state: { justLoggedIn: true }
+      });
+    } catch (err) {
+      addDebugInfo('Erro durante o processo de login: ' + err.message, 'error');
+      setError('Erro ao fazer login. Por favor, tente novamente.');
+      setIsLoading(false);
     }
   };
 
@@ -442,6 +634,24 @@ const LoginPaciente = () => {
          <p className="mt-6 text-center text-sm">
           <Link to="/" className="text-teal-600 hover:underline">Voltar para Home</Link>
         </p>
+
+        {/* Seção de Debug */}
+        {process.env.NODE_ENV === 'development' && debugInfo.length > 0 && (
+          <div className="mt-8 p-4 border border-gray-200 rounded-lg bg-gray-50">
+            <h3 className="text-sm font-semibold text-gray-700 mb-2">Debug Info:</h3>
+            <div className="text-xs font-mono bg-white p-2 rounded max-h-40 overflow-y-auto">
+              {debugInfo.map((info, index) => (
+                <div key={index} className={`mb-1 ${
+                  info.type === 'error' ? 'text-red-600' : 
+                  info.type === 'warn' ? 'text-yellow-600' : 
+                  'text-gray-600'
+                }`}>
+                  [{info.timestamp.split('T')[1].split('.')[0]}] {info.message}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
@@ -477,9 +687,8 @@ const RegistroPsicologo = () => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData),
       });
-      
-      const data = await response.json();
-      
+      const { data } = await safeParseResponse(response);
+
       if (!response.ok) {
         throw new Error(data.message || 'Falha ao registrar.');
       }
@@ -506,7 +715,7 @@ const RegistroPsicologo = () => {
           </h2>
         </div>
         <form onSubmit={handleSubmit} className="space-y-5">
-          <InputForm label="Nome Completo" name="nome_completo" type="text" value={formData.nome_completo} onChange={handleChange} disabled={isLoading} />
+          <InputForm label="Nome Completo" name="nome" type="text" value={formData.nome} onChange={handleChange} disabled={isLoading} />
           <InputForm label="Email" name="email" type="email" value={formData.email} onChange={handleChange} disabled={isLoading} />
           <InputForm label="CRP" name="crp" type="text" value={formData.crp} onChange={handleChange} disabled={isLoading} placeholder="00/12345" />
           <InputForm label="Senha" name="senha" type="password" value={formData.senha} onChange={handleChange} disabled={isLoading} placeholder="Min. 6 caracteres" />
@@ -553,9 +762,9 @@ const DashboardPsicologo = () => {
       const response = await fetch('/api/pacientes', {
         headers: { 'Authorization': `Bearer ${psicologo.token}` },
       });
-      if (!response.ok) throw new Error('Não foi possível carregar os pacientes.');
-      const data = await response.json();
-      setPacientes(data);
+  const { data } = await safeParseResponse(response);
+  if (!response.ok) throw new Error(data.message || 'Não foi possível carregar os pacientes.');
+  setPacientes(data);
       setError(null);
     } catch (err) {
       setError(err.message);
@@ -580,9 +789,7 @@ const DashboardPsicologo = () => {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${psicologo.token}` },
       });
-      
-      const data = await response.json();
-      
+      const { data } = await safeParseResponse(response);
       if (!response.ok) {
         throw new Error(data.message || 'Erro ao eliminar paciente.');
       }
@@ -619,7 +826,7 @@ const DashboardPsicologo = () => {
           {pacientes.map((p) => (
             <li key={p.id} className="py-4 flex flex-col sm:flex-row justify-between items-start sm:items-center">
               <div className="mb-2 sm:mb-0">
-                <p className="text-lg font-medium text-teal-700">{p.nome_completo}</p>
+                <p className="text-lg font-medium text-teal-700">{p.nome}</p>
                 <p className="text-sm text-gray-500">Email: {p.email}</p>
                 <p className="text-sm text-gray-500">Código de Acesso: <span className="font-mono bg-gray-100 p-1 rounded">{p.codigo_acesso}</span></p>
               </div>
@@ -665,6 +872,7 @@ const DashboardPsicologo = () => {
 const PacienteDashboard = () => {
   const { id: pacienteId } = useParams();
   const { psicologo } = useAuth();
+  const { isTestMode } = useTestMode();
   
   const [paciente, setPaciente] = useState(null);
   const [respostas, setRespostas] = useState([]);
@@ -693,14 +901,18 @@ const PacienteDashboard = () => {
           }),
         ]);
         
+        const pacienteParsed = await safeParseResponse(pacienteRes);
+        const respostasParsed = await safeParseResponse(respostasRes);
+        const resumosParsed = await safeParseResponse(resumosRes);
+
         if (!pacienteRes.ok || !respostasRes.ok || !resumosRes.ok) {
-          throw new Error('Falha ao carregar dados do paciente.');
+          throw new Error(pacienteParsed.data.message || 'Falha ao carregar dados do paciente.');
         }
-        
-        const dataPaciente = await pacienteRes.json();
-        const dataRespostas = await respostasRes.json();
-        const dataResumos = await resumosRes.json();
-        
+
+        const dataPaciente = pacienteParsed.data;
+        const dataRespostas = respostasParsed.data;
+        const dataResumos = resumosParsed.data;
+
         setPaciente(dataPaciente);
         setRespostas(dataRespostas);
         setResumos(dataResumos);
@@ -731,7 +943,7 @@ const PacienteDashboard = () => {
       </Link>
       
       <h1 className="text-3xl font-bold text-gray-800 mb-2">
-        {paciente?.nome_completo || "Detalhes do Paciente"}
+        {paciente?.nome || "Detalhes do Paciente"}
       </h1>
       <p className="text-lg text-gray-600 mb-6">
         Plano Atual: <span className="font-semibold">{paciente?.questionario_nome || "Nenhum"} ({paciente?.frequencia || "N/A"})</span>
@@ -783,27 +995,44 @@ const PacienteDashboard = () => {
 const CriarPacienteForm = () => {
   const { psicologo } = useAuth();
   const navigate = useNavigate();
-  const [formData, setFormData] = useState({ nome_completo: '', email: '' });
+  const [formData, setFormData] = useState({ nome: '', email: '' });
+  const [diasSelecionados, setDiasSelecionados] = useState([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [pacienteIdCriado, setPacienteIdCriado] = useState(null);
+  const [etapa, setEtapa] = useState(1); // 1 = dados, 2 = dias
+
+  const diasSemana = [
+    { id: 1, nome: 'Segunda-feira' },
+    { id: 2, nome: 'Terça-feira' },
+    { id: 3, nome: 'Quarta-feira' },
+    { id: 4, nome: 'Quinta-feira' },
+    { id: 5, nome: 'Sexta-feira' },
+    { id: 6, nome: 'Sábado' },
+    { id: 7, nome: 'Domingo' }
+  ];
 
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
-  const handleSubmit = async (e) => {
+  const toggleDia = (diaId) => {
+    setDiasSelecionados(prev => {
+      if (prev.includes(diaId)) {
+        return prev.filter(id => id !== diaId);
+      } else if (prev.length < 3) {
+        return [...prev, diaId].sort((a, b) => a - b);
+      }
+      return prev;
+    });
+  };
+
+  const handleSubmitDados = async (e) => {
     e.preventDefault();
     setError('');
-    setSuccess('');
     setIsSubmitting(true);
-
-    if (!formData.nome_completo || !formData.email) {
-      setError('Por favor, preencha nome e email.');
-      setIsSubmitting(false);
-      return;
-    }
 
     try {
       const response = await fetch('/api/pacientes', {
@@ -812,16 +1041,63 @@ const CriarPacienteForm = () => {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${psicologo.token}`,
         },
-        body: JSON.stringify(formData),
+        body: JSON.stringify({
+          nome: formData.nome,
+          email: formData.email
+        }),
       });
       
-      const data = await response.json();
+      const { data, status } = await safeParseResponse(response);
+      console.log('Response status:', status);
+      console.log('Response data:', data);
       if (!response.ok) throw new Error(data.message || 'Erro ao criar paciente.');
 
-      setSuccess(`Paciente criado! Código de acesso: ${data.codigo_acesso}`);
-      setFormData({ nome_completo: '', email: '' });
-      setTimeout(() => navigate('/psicologo/dashboard'), 3000);
+      console.log('Setting pacienteIdCriado to:', data.id);
+      setPacienteIdCriado(data.id);
+      setSuccess(`Paciente ${data.nome} criado (Código: ${data.codigo_acesso})! Agora selecione os dias dos questionários.`);
+      setEtapa(2);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
+  const handleSubmitDias = async (e) => {
+    e.preventDefault();
+    setError('');
+    setIsSubmitting(true);
+
+    if (diasSelecionados.length !== 3) {
+      setError('Selecione exatamente 3 dias da semana.');
+      setIsSubmitting(false);
+      return;
+    }
+
+    try {
+      // Questionários em ordem: questionario1, questionario2, questionario3
+      const configuracaoDias = diasSelecionados.map((diaId, index) => ({
+        diaId,
+        questionarioId: index + 1 // 1, 2, 3
+      }));
+
+      const response = await fetch(`/api/pacientes/${pacienteIdCriado}/questionario`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${psicologo.token}`,
+        },
+        body: JSON.stringify({
+          configuracao_questionarios: configuracaoDias,
+          resumo_semanal_apos_terceiro: true
+        }),
+      });
+
+      const { data } = await safeParseResponse(response);
+      if (!response.ok) throw new Error(data.message || 'Erro ao configurar dias.');
+
+      setSuccess('Paciente criado e configurado com sucesso!');
+      setTimeout(() => navigate('/psicologo/dashboard'), 2000);
     } catch (err) {
       setError(err.message);
     } finally {
@@ -830,17 +1106,58 @@ const CriarPacienteForm = () => {
   };
 
   return (
-    <FormWrapper titulo="Novo Paciente" linkVoltar="/psicologo/dashboard">
-      <form onSubmit={handleSubmit} className="space-y-6">
-        <InputForm label="Nome Completo" name="nome_completo" type="text" value={formData.nome_completo} onChange={handleChange} disabled={isSubmitting || !!success} />
-        <InputForm label="Email" name="email" type="email" value={formData.email} onChange={handleChange} disabled={isSubmitting || !!success} />
-        
-        <FormStatus success={success} error={error} />
-        
-        {!success && (
-          <BotaoSubmit label="Salvar Paciente e Gerar Código" labelLoading="Salvando..." isLoading={isSubmitting} icon={<UserPlus />} />
-        )}
-      </form>
+    <FormWrapper titulo={etapa === 1 ? "Novo Paciente" : "Selecionar Dias"} linkVoltar="/psicologo/dashboard">
+      {etapa === 1 ? (
+        <form onSubmit={handleSubmitDados} className="space-y-6">
+          <InputForm label="Nome Completo" name="nome" type="text" value={formData.nome} onChange={handleChange} disabled={isSubmitting || !!success} required />
+          <InputForm label="Email (opcional)" name="email" type="email" value={formData.email} onChange={handleChange} disabled={isSubmitting || !!success} />
+          
+          <FormStatus success={success} error={error} />
+          
+          {!success && (
+            <BotaoSubmit label="Próximo" labelLoading="Salvando..." isLoading={isSubmitting} icon={<UserPlus />} />
+          )}
+        </form>
+      ) : (
+        <form onSubmit={handleSubmitDias} className="space-y-6">
+          <div>
+            <h2 className="text-xl font-semibold text-gray-800 mb-2">Selecione 3 Dias da Semana</h2>
+            <p className="text-gray-600 mb-4">
+              Os questionários serão atribuídos automaticamente em ordem (PHQ-9 → GAD-7 → Diário de Humor).
+            </p>
+            
+            <div className="space-y-3">
+              {diasSemana.map(dia => (
+                <label key={dia.id} className="flex items-center p-4 border rounded-lg cursor-pointer hover:bg-gray-50">
+                  <input
+                    type="checkbox"
+                    checked={diasSelecionados.includes(dia.id)}
+                    onChange={() => toggleDia(dia.id)}
+                    disabled={isSubmitting || (!diasSelecionados.includes(dia.id) && diasSelecionados.length >= 3)}
+                    className="h-5 w-5 text-teal-600 focus:ring-teal-500 border-gray-300 rounded"
+                  />
+                  <span className="ml-3 font-medium text-gray-700">{dia.nome}</span>
+                  {diasSelecionados.includes(dia.id) && (
+                    <span className="ml-auto text-sm text-teal-600 font-semibold">
+                      #{diasSelecionados.indexOf(dia.id) + 1}
+                    </span>
+                  )}
+                </label>
+              ))}
+            </div>
+          </div>
+
+          <FormStatus success={success} error={error} />
+          
+          <BotaoSubmit 
+            label={`Finalizar (${diasSelecionados.length}/3 dias)`} 
+            labelLoading="Salvando..." 
+            isLoading={isSubmitting} 
+            icon={<Save />}
+            disabled={diasSelecionados.length !== 3}
+          />
+        </form>
+      )}
     </FormWrapper>
   );
 };
@@ -851,7 +1168,7 @@ const EditarPacienteForm = () => {
   const { psicologo } = useAuth();
   const navigate = useNavigate();
   
-  const [formData, setFormData] = useState({ nome_completo: '', email: '' });
+  const [formData, setFormData] = useState({ nome: '', email: '' });
   const [isLoading, setIsLoading] = useState(true); // Loading para buscar
   const [isSubmitting, setIsSubmitting] = useState(false); // Loading para enviar
   const [error, setError] = useState('');
@@ -867,9 +1184,9 @@ const EditarPacienteForm = () => {
         const response = await fetch(`/api/pacientes/${pacienteId}`, {
            headers: { 'Authorization': `Bearer ${psicologo.token}` }
         });
-        if (!response.ok) throw new Error('Falha ao buscar dados do paciente.');
-        const data = await response.json();
-        setFormData({ nome_completo: data.nome_completo, email: data.email });
+  const { data } = await safeParseResponse(response);
+  if (!response.ok) throw new Error(data.message || 'Falha ao buscar dados do paciente.');
+  setFormData({ nome: data.nome, email: data.email });
       } catch (err) {
         setError(err.message);
       } finally {
@@ -901,10 +1218,10 @@ const EditarPacienteForm = () => {
         body: JSON.stringify(formData),
       });
       
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.message || 'Erro ao atualizar paciente.');
+  const { data } = await safeParseResponse(response);
+  if (!response.ok) throw new Error(data.message || 'Erro ao atualizar paciente.');
 
-      setSuccess('Paciente atualizado com sucesso!');
+  setSuccess('Paciente atualizado com sucesso!');
       setTimeout(() => navigate('/psicologo/dashboard'), 2000);
 
     } catch (err) {
@@ -919,7 +1236,7 @@ const EditarPacienteForm = () => {
   return (
     <FormWrapper titulo="Editar Paciente" linkVoltar="/psicologo/dashboard">
       <form onSubmit={handleSubmit} className="space-y-6">
-        <InputForm label="Nome Completo" name="nome_completo" type="text" value={formData.nome_completo} onChange={handleChange} disabled={isSubmitting} />
+        <InputForm label="Nome Completo" name="nome" type="text" value={formData.nome} onChange={handleChange} disabled={isSubmitting} />
         <InputForm label="Email" name="email" type="email" value={formData.email} onChange={handleChange} disabled={isSubmitting} />
         
         <FormStatus success={success} error={error} />
@@ -936,22 +1253,59 @@ const ConfigurarPlanoPaciente = () => {
   const { psicologo } = useAuth();
   const navigate = useNavigate();
 
-  // Lista mockada de questionários, já que a API não fornece
-  const mockQuestionariosLista = [
+  // Lista de questionários disponíveis
+  const questionariosLista = [
     { id: 1, nome: "GAD-7 (Ansiedade)" },
-    { id: 2, nome: "PHQ-9 (Depressão)" }
+    { id: 2, nome: "PHQ-9 (Depressão)" },
+    { id: 3, nome: "ASSIST (Uso de Substâncias)" }
   ];
 
+  // Estado para os dias selecionados e seus questionários
+  const [configuracaoDias, setConfiguracaoDias] = useState([]);
   const [paciente, setPaciente] = useState(null);
-  const [selectedQuestionarioId, setSelectedQuestionarioId] = useState('');
-  const [frequencia, setFrequencia] = useState('diaria');
   
-  const [isLoading, setIsLoading] = useState(true); // Para buscar
-  const [isSubmitting, setIsSubmitting] = useState(false); // Para enviar
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
 
-  // Buscar dados atuais do paciente (para saber o plano atual)
+  const diasSemana = [
+    { id: 1, nome: 'Segunda-feira' },
+    { id: 2, nome: 'Terça-feira' },
+    { id: 3, nome: 'Quarta-feira' },
+    { id: 4, nome: 'Quinta-feira' },
+    { id: 5, nome: 'Sexta-feira' },
+    { id: 6, nome: 'Sábado' },
+    { id: 7, nome: 'Domingo' }
+  ];
+
+  // Função para manipular a seleção de dias
+  const handleDiaChange = (diaId, questionarioId) => {
+    setConfiguracaoDias(prev => {
+      // Se já existe uma configuração para este dia, remova
+      const semDiaAtual = prev.filter(config => config.diaId !== diaId);
+      
+      // Se um questionário foi selecionado e ainda não temos 3 dias (ou estamos editando um existente)
+      if (questionarioId && (semDiaAtual.length < 3 || prev.some(config => config.diaId === diaId))) {
+        return [...semDiaAtual, { diaId, questionarioId }];
+      }
+      
+      return semDiaAtual;
+    });
+  };
+
+  // Função para verificar se um dia está selecionado
+  const isDiaSelecionado = (diaId) => {
+    return configuracaoDias.some(config => config.diaId === diaId);
+  };
+
+  // Função para obter o questionário associado a um dia
+  const getQuestionarioDoDia = (diaId) => {
+    const config = configuracaoDias.find(config => config.diaId === diaId);
+    return config ? config.questionarioId : '';
+  };
+
+  // Buscar dados atuais do paciente
   useEffect(() => {
     if (!pacienteId || !psicologo?.token) return;
     
@@ -961,11 +1315,13 @@ const ConfigurarPlanoPaciente = () => {
         const response = await fetch(`/api/pacientes/${pacienteId}`, {
            headers: { 'Authorization': `Bearer ${psicologo.token}` }
         });
-        if (!response.ok) throw new Error('Falha ao buscar dados do paciente.');
-        const data = await response.json();
+        const { data } = await safeParseResponse(response);
+        if (!response.ok) throw new Error(data.message || 'Falha ao buscar dados do paciente.');
         setPaciente(data);
-        setSelectedQuestionarioId(data.questionario_atual_id || '');
-        setFrequencia(data.frequencia || 'diaria');
+        // Configurar dias e questionários salvos, se existirem
+        if (data.configuracao_questionarios) {
+          setConfiguracaoDias(data.configuracao_questionarios);
+        }
       } catch (err) {
         setError(err.message);
       } finally {
@@ -981,6 +1337,13 @@ const ConfigurarPlanoPaciente = () => {
     setSuccess('');
     setIsSubmitting(true);
 
+    // Validar se exatamente 3 dias foram selecionados
+    if (configuracaoDias.length !== 3) {
+      setError('Por favor, selecione exatamente 3 dias da semana.');
+      setIsSubmitting(false);
+      return;
+    }
+
     try {
       const response = await fetch(`/api/pacientes/${pacienteId}/questionario`, {
         method: 'POST',
@@ -989,12 +1352,12 @@ const ConfigurarPlanoPaciente = () => {
           'Authorization': `Bearer ${psicologo.token}`,
         },
         body: JSON.stringify({
-          questionario_id: selectedQuestionarioId,
-          frequencia: frequencia
+          configuracao_questionarios: configuracaoDias,
+          resumo_semanal_apos_terceiro: true // Indica que o resumo deve ser solicitado após o terceiro questionário
         }),
       });
       
-      const data = await response.json();
+      const { data } = await safeParseResponse(response);
       if (!response.ok) throw new Error(data.message || 'Erro ao definir plano.');
 
       setSuccess('Plano do paciente atualizado com sucesso!');
@@ -1010,45 +1373,65 @@ const ConfigurarPlanoPaciente = () => {
   if (isLoading) return <div className="text-center p-8"><Spinner /> Carregando...</div>;
 
   return (
-    <FormWrapper titulo={`Configurar Plano: ${paciente?.nome_completo || ''}`} linkVoltar={`/psicologo/paciente/${pacienteId}/dashboard`}>
+    <FormWrapper titulo={`Configurar Plano: ${paciente?.nome || ''}`} linkVoltar={`/psicologo/paciente/${pacienteId}/dashboard`}>
       <form onSubmit={handleSubmit} className="space-y-6">
-        
-        {/* Seleção de Questionário */}
         <div>
-          <label htmlFor="questionario" className="block text-lg font-medium text-gray-800">Questionário</label>
-           <select 
-              id="questionario"
-              value={selectedQuestionarioId}
-              onChange={(e) => setSelectedQuestionarioId(Number(e.target.value))}
-              className="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-teal-500 focus:border-teal-500"
-              disabled={isSubmitting}
-            >
-              <option value="">-- Selecione um questionário --</option>
-              {mockQuestionariosLista.map(q => (
-                <option key={q.id} value={q.id}>{q.nome}</option>
-              ))}
-            </select>
-        </div>
-
-        {/* Seleção de Frequência */}
-        <div>
-          <label htmlFor="frequencia" className="block text-lg font-medium text-gray-800">Frequência</label>
-           <select 
-              id="frequencia"
-              value={frequencia}
-              onChange={(e) => setFrequencia(e.target.value)}
-              className="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-teal-500 focus:border-teal-500"
-              disabled={isSubmitting}
-            >
-              <option value="diaria">Diária</option>
-              <option value="semanal">Semanal</option>
-              {/* Adicionar mais opções se o backend suportar */}
-            </select>
+          <h2 className="text-xl font-semibold text-gray-800 mb-4">Configuração dos Questionários</h2>
+          <p className="text-gray-600 mb-4">
+            Selecione 3 dias da semana e atribua um questionário para cada dia.
+            O paciente preencherá o resumo semanal após completar o terceiro questionário.
+          </p>
+          
+          <div className="space-y-4">
+            {diasSemana.map(dia => (
+              <div key={dia.id} className="border p-4 rounded-lg">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center">
+                    <input
+                      type="checkbox"
+                      id={`dia-${dia.id}`}
+                      checked={isDiaSelecionado(dia.id)}
+                      onChange={() => {
+                        if (isDiaSelecionado(dia.id)) {
+                          handleDiaChange(dia.id, null);
+                        } else if (configuracaoDias.length < 3) {
+                          handleDiaChange(dia.id, questionariosLista[0].id);
+                        }
+                      }}
+                      className="h-5 w-5 text-teal-600 focus:ring-teal-500 border-gray-300 rounded"
+                      disabled={isSubmitting || (!isDiaSelecionado(dia.id) && configuracaoDias.length >= 3)}
+                    />
+                    <label htmlFor={`dia-${dia.id}`} className="ml-3 font-medium text-gray-700">
+                      {dia.nome}
+                    </label>
+                  </div>
+                  
+                  {isDiaSelecionado(dia.id) && (
+                    <select
+                      value={getQuestionarioDoDia(dia.id)}
+                      onChange={(e) => handleDiaChange(dia.id, Number(e.target.value))}
+                      className="ml-4 px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-teal-500 focus:border-teal-500"
+                      disabled={isSubmitting}
+                    >
+                      {questionariosLista.map(q => (
+                        <option key={q.id} value={q.id}>{q.nome}</option>
+                      ))}
+                    </select>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
 
         <FormStatus success={success} error={error} />
         
-        <BotaoSubmit label="Salvar Plano" labelLoading="Salvando..." isLoading={isSubmitting} icon={<Save />} />
+        <BotaoSubmit 
+          label="Salvar Configuração" 
+          labelLoading="Salvando..." 
+          isLoading={isSubmitting} 
+          icon={<Save />} 
+        />
       </form>
     </FormWrapper>
   );
@@ -1067,36 +1450,223 @@ const QuestionarioPaciente = () => {
   const [success, setSuccess] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  const { isTestMode, testDate, setTestDate } = useTestMode();
+  const [diaAtual, setDiaAtual] = useState(0); // 0 = domingo, 1 = segunda, etc
+
+  const dias = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'];
+
+  // Função para obter o dia da semana considerando timezone Brasil (mesmo que backend)
+  const getDayOfWeekBR = (date) => {
+    const dateStr = date.toLocaleString("en-US", { timeZone: "America/Sao_Paulo" });
+    const dateObj = new Date(dateStr);
+    return dateObj.getDay();
+  };
+
+  const mudarDia = (offset) => {
+    const novaData = new Date(testDate);
+    novaData.setDate(novaData.getDate() + offset);
+    setTestDate(novaData);
+    setDiaAtual(getDayOfWeekBR(novaData));
+  };
+
+  // Sincronizar diaAtual quando testDate muda
   useEffect(() => {
-    if (!paciente?.token) return;
+    if (testDate) {
+      setDiaAtual(getDayOfWeekBR(testDate));
+    }
+  }, [testDate]);
+
+  const reiniciarQuestionarios = async () => {
+    if (!window.confirm('Tem certeza que deseja reiniciar os questionários? Esta ação é irreversível.')) {
+      return;
+    }
+    
+    try {
+      const response = await fetch('/api/questionario/reiniciar', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${paciente.token}`,
+          'Content-Type': 'application/json',
+          ...(isTestMode && { 'x-test-mode': 'true' }),
+        }
+      });
+      
+      if (response.ok) {
+        setSuccess('Questionários reiniciados com sucesso!');
+        setError('');
+        // Recarregar o questionário
+        window.location.reload();
+      } else {
+        const data = await response.json();
+        setError(data.message || 'Erro ao reiniciar questionários');
+      }
+    } catch (err) {
+      setError('Erro ao reiniciar questionários: ' + err.message);
+    }
+  };
+
+  // Função auxiliar para fazer requisições autenticadas
+  const fetchAutenticado = async (url, options = {}) => {
+    if (!paciente?.token) {
+      console.error('Token não encontrado no estado do paciente');
+      localStorage.removeItem('paciente-token');
+      window.location.href = '/login-paciente';
+      return;
+    }
+
+    const defaultOptions = {
+      headers: {
+        'Authorization': `Bearer ${paciente.token}`,
+        'Content-Type': 'application/json',
+      },
+      credentials: 'include' // Alterado para 'include' para permitir cookies em requisições cross-origin
+    };
+
+    const finalOptions = {
+      ...defaultOptions,
+      ...options,
+      headers: {
+        ...defaultOptions.headers,
+        ...options.headers,
+      },
+    };
+
+    console.log('Fazendo requisição autenticada:', {
+      url,
+      method: options.method || 'GET',
+      credentials: finalOptions.credentials
+    });
+
+    try {
+      const response = await fetch(url, finalOptions);
+      
+      if (response.status === 401) {
+        console.error('Token expirado ou inválido');
+        localStorage.removeItem('paciente-token');
+        // Usar navigate ao invés de window.location para manter o estado do React Router
+        window.location.replace('/login-paciente');
+        return;
+      }
+
+      const contentType = response.headers.get('content-type');
+      if (contentType && contentType.includes('application/json')) {
+        return response;
+      } else {
+        throw new Error('Resposta inválida do servidor');
+      }
+    } catch (error) {
+      console.error('Erro na requisição:', error);
+      if (error.name === 'TypeError') {
+        // Erro de rede ou CORS
+        console.error('Erro de rede ou CORS');
+      }
+      throw error;
+    }
+  };
+
+  useEffect(() => {
+    let isMounted = true;
+
+    if (!paciente?.token) {
+      console.log('Token não disponível, ignorando fetch');
+      return;
+    }
+
+    // Garantir que testDate está inicializado
+    const currentDate = testDate || new Date();
+
     const fetchQuestionario = async () => {
+      if (!isMounted) return;
+      
       setIsLoading(true);
       setError('');
       setSuccess('');
+      
       try {
-        const response = await fetch('/api/questionario/hoje', {
-          headers: { 'Authorization': `Bearer ${paciente.token}` },
-        });
-        const data = await response.json();
-        if (response.status === 404) setError(data.message || 'Nenhum questionário para hoje.');
-        else if (response.status === 409) setSuccess(data.message || 'Você já respondeu o questionário de hoje.');
-        else if (!response.ok) throw new Error(data.message || 'Falha ao buscar questionário.');
-        else {
-          setQuestionario(data);
-          const respostasIniciais = {};
-          if (data.perguntas && Array.isArray(data.perguntas)) {
-             data.perguntas.forEach((p, index) => {
-               const perguntaId = p.id || `q${index}`;
-               respostasIniciais[perguntaId] = null;
-             });
-          }
-          setRespostas(respostasIniciais);
+        console.log('Iniciando busca do questionário...');
+        console.log('testDate:', currentDate);
+        
+        // Adiciona a data de teste como parâmetro de consulta se estiver no modo teste
+        // IMPORTANTE: Converter para Brasil timezone ANTES de enviar
+        let endpoint = '/api/questionario/hoje';
+        if (isTestMode) {
+          // Obter a data em São Paulo timezone
+          const dateStrBR = currentDate.toLocaleString("en-US", {
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit',
+            timeZone: "America/Sao_Paulo"
+          });
+          const [mes, dia, ano] = dateStrBR.split('/');
+          const dateBRFormatted = `${ano}-${mes}-${dia}`; // YYYY-MM-DD em Brasil
+          endpoint = `/api/questionario/hoje?test_date=${dateBRFormatted}`;
+          console.log(`🕐 Frontend: testDate=${currentDate.toISOString()} -> Brazil date=${dateBRFormatted}`);
         }
-      } catch (err) { setError(err.message); }
-      finally { setIsLoading(false); }
+
+        console.log('Endpoint:', endpoint);
+        console.log('Estado do paciente:', {
+          temToken: !!paciente?.token,
+          tipo: paciente?.tipo,
+          isTestMode
+        });
+
+        const response = await fetchAutenticado(endpoint, {
+          headers: isTestMode ? { 'X-Test-Mode': 'true' } : undefined
+        });
+
+        if (!isMounted) return;
+
+        if (!response) {
+          console.log('Nenhuma resposta recebida do fetchAutenticado');
+          return;
+        }
+
+        const { data } = await safeParseResponse(response);
+        console.log('Resposta do servidor:', { status: response.status, data });
+
+        if (response.ok) {
+          // Status 200 - pode ser sucesso ou "sem questionário"
+          if (data.temQuestionarioHoje === false) {
+            // Sem questionário para hoje
+            if (data.message === 'Você já enviou a sua resposta de hoje.') {
+              setSuccess('Você já respondeu o questionário de hoje. Volte amanhã!');
+            } else {
+              setError(data.message || 'Nenhum questionário para hoje.');
+            }
+          } else if (data.temQuestionarioHoje === true) {
+            // Tem questionário para hoje
+            setQuestionario(data);
+            const respostasIniciais = {};
+            if (data.perguntas && Array.isArray(data.perguntas)) {
+               data.perguntas.forEach((p, index) => {
+                 const perguntaId = typeof p === 'string' ? `q${index}` : (p.id || `q${index}`);
+                 respostasIniciais[perguntaId] = null;
+               });
+            }
+            setRespostas(respostasIniciais);
+          }
+        } else {
+          console.error('Erro na resposta:', response.status, data);
+          throw new Error(data.message || 'Falha ao buscar questionário.');
+        }
+      } catch (err) {
+        console.error('Erro ao buscar questionário:', err);
+        if (isMounted) {
+          setError(err.message);
+        }
+      } finally {
+        if (isMounted) {
+          setIsLoading(false);
+        }
+      }
     };
+
     fetchQuestionario();
-  }, [paciente.token]);
+
+    return () => {
+      isMounted = false;
+    };
+  }, [paciente?.token, isTestMode, testDate]);
 
   const handleRespostaChange = (perguntaId, valor) => {
     setRespostas(prev => ({ ...prev, [perguntaId]: valor }));
@@ -1116,20 +1686,42 @@ const QuestionarioPaciente = () => {
     }
 
     try {
+      const body = {
+        questionarioId: questionario.id,
+        respostas: respostas,
+      };
+
+      // Se estiver em modo de teste, adicionar a data de teste em Brasil timezone
+      if (isTestMode && testDate) {
+        // Converter para Brasil timezone ANTES de enviar
+        const dateStrBR = testDate.toLocaleString("en-US", {
+          year: 'numeric',
+          month: '2-digit',
+          day: '2-digit',
+          timeZone: "America/Sao_Paulo"
+        });
+        const [mes, dia, ano] = dateStrBR.split('/');
+        body.dataResposta = `${ano}-${mes}-${dia}`; // YYYY-MM-DD em Brasil
+        console.log(`🕐 Frontend (submit): testDate=${testDate.toISOString()} -> dataResposta=${body.dataResposta}`);
+      }
+
       const response = await fetch('/api/questionario/responder', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${paciente.token}`,
+          ...(isTestMode && { 'x-test-mode': 'true' }),
         },
-        body: JSON.stringify({
-          questionarioId: questionario.id,
-          respostas: respostas,
-        }),
+        body: JSON.stringify(body),
       });
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.message || 'Erro ao enviar respostas.');
+  const { data } = await safeParseResponse(response);
+  if (!response.ok) throw new Error(data.message || 'Erro ao enviar respostas.');
       setSuccess('Obrigado! Suas respostas foram enviadas com sucesso.');
+      
+      if (data.resumoNecessario) {
+        sessionStorage.setItem('mostrarResumo', 'true');
+      }
+      
       setQuestionario(null);
     } catch (err) {
       setError(err.message);
@@ -1152,17 +1744,34 @@ const QuestionarioPaciente = () => {
 
   const renderPergunta = (pergunta, index) => {
     const perguntaId = pergunta.id || `q${index}`;
-    const opcoes = pergunta.opcoes || [
-      { texto: "Nenhuma vez", valor: 0 },
-      { texto: "Vários dias", valor: 1 },
-      { texto: "Mais da metade dos dias", valor: 2 },
-      { texto: "Quase todos os dias", valor: 3 },
-    ];
+    
+    // Suportar tanto strings quanto objetos
+    const textopergunta = typeof pergunta === 'string' ? pergunta : (pergunta.texto || 'Pergunta sem texto');
+    
+    // Se questionario recebe opcoes do backend, usar; senão usar padrão
+    let opcoes = [];
+    if (questionario.opcoes && typeof questionario.opcoes[0] === 'string') {
+      // opcoes vem como array de strings do backend
+      opcoes = questionario.opcoes.map((opt, idx) => ({
+        texto: opt,
+        valor: idx
+      }));
+    } else if (pergunta.opcoes) {
+      opcoes = pergunta.opcoes;
+    } else {
+      // Padrão PHQ-9/GAD-7
+      opcoes = [
+        { texto: "Nenhuma vez", valor: 0 },
+        { texto: "Vários dias", valor: 1 },
+        { texto: "Mais da metade dos dias", valor: 2 },
+        { texto: "Quase todos os dias", valor: 3 },
+      ];
+    }
 
     return (
       <fieldset key={perguntaId} className="border-t pt-4">
         <legend className="block text-lg font-medium text-gray-800">
-          {pergunta.texto || 'Pergunta sem texto'}
+          {textopergunta}
         </legend>
         <div className="mt-4 space-y-3">
           {opcoes.map((opt) => (
@@ -1186,17 +1795,63 @@ const QuestionarioPaciente = () => {
   return (
     <div className="bg-white p-6 rounded-lg shadow-lg">
       <h1 className="text-2xl font-bold mb-6 text-gray-800">Questionário do Dia</h1>
+      
+      {!isTestMode && (
+        <div className="mb-6 p-3 bg-blue-50 border border-blue-300 rounded-lg">
+          <p className="text-sm text-blue-800">💡 <strong>Dica:</strong> Clique em "Ativar Modo de Teste" no topo para simular diferentes dias da semana</p>
+        </div>
+      )}
+      
+      {isTestMode && (
+        <div className="mb-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+          <p className="text-sm font-semibold text-yellow-800 mb-3">📅 Modo de Teste - Controles de Simulação:</p>
+          <div className="flex flex-wrap gap-2 mb-3">
+            <button
+              onClick={() => mudarDia(-1)}
+              className="px-3 py-1 bg-yellow-200 text-yellow-800 rounded text-sm font-medium hover:bg-yellow-300"
+            >
+              ← Dia Anterior
+            </button>
+            <span className="px-3 py-1 bg-yellow-100 text-yellow-800 rounded text-sm">
+              {dias[diaAtual]} ({testDate.toLocaleDateString()})
+            </span>
+            <button
+              onClick={() => mudarDia(1)}
+              className="px-3 py-1 bg-yellow-200 text-yellow-800 rounded text-sm font-medium hover:bg-yellow-300"
+            >
+              Próximo Dia →
+            </button>
+            <button
+              onClick={reiniciarQuestionarios}
+              className="px-3 py-1 bg-red-200 text-red-800 rounded text-sm font-medium hover:bg-red-300"
+            >
+              🔄 Reiniciar Questionários
+            </button>
+          </div>
+        </div>
+      )}
+      
       {isLoading && renderLoading()}
-      {error && !success && renderMensagem(error, 'error')}
+      {error && !success && !questionario && renderMensagem(error, 'error')}
       {success && renderMensagem(success, 'success')}
       {questionario && !isLoading && !success && (
         <form onSubmit={handleSubmit} className="space-y-8">
-          <h2 className="text-xl font-semibold text-gray-700">{questionario.nome}</h2>
-          <p className="text-gray-600">{questionario.descricao || 'Responda as perguntas abaixo.'}</p>
+          <div className="mb-6 p-4 bg-teal-50 border border-teal-200 rounded-lg">
+            <p className="text-sm font-medium text-teal-700 mb-2">📋 Questionário de Hoje:</p>
+            <h2 className="text-xl font-bold text-teal-900">{questionario.titulo || questionario.nome}</h2>
+            {questionario.descricao && <p className="text-gray-600 mt-2">{questionario.descricao}</p>}
+          </div>
           {questionario.perguntas && questionario.perguntas.map((p, i) => renderPergunta(p, i))}
           {error && <p className="text-sm text-red-600 text-center">{error}</p>}
           <BotaoSubmit label="Enviar Respostas" labelLoading="Enviando..." isLoading={isSubmitting} icon={<FileText />} />
         </form>
+      )}
+      {!isLoading && !questionario && !success && error && (
+        <div className="p-6 text-center bg-gray-50 rounded-lg">
+          <p className="text-2xl font-bold text-gray-800 mb-2">📭 Hoje não tem questionário para responder</p>
+          <p className="text-gray-600 mb-4">{error}</p>
+          <p className="text-sm text-gray-500">Volte nos dias configurados pelo seu psicólogo!</p>
+        </div>
       )}
     </div>
   );
@@ -1210,6 +1865,18 @@ const ResumoPaciente = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [isDisabled, setIsDisabled] = useState(true);
+
+  useEffect(() => {
+    const mostrarResumo = sessionStorage.getItem('mostrarResumo');
+    if (mostrarResumo === 'true') {
+      setIsDisabled(false);
+      sessionStorage.removeItem('mostrarResumo');
+    } else {
+      setIsDisabled(true);
+      setError('O resumo semanal só pode ser preenchido após completar os 3 questionários da semana.');
+    }
+  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -1231,11 +1898,11 @@ const ResumoPaciente = () => {
           'Authorization': `Bearer ${paciente.token}`,
         },
         body: JSON.stringify({
-          resumo_semanal: resumoSemanal,
-          expectativa_semana: expectativaSemana,
+          texto_resumo: resumoSemanal,
+          texto_expectativa: expectativaSemana,
         }),
       });
-      const data = await response.json();
+      const { data } = await safeParseResponse(response);
       if (!response.ok) {
         if (response.status === 409) setError(data.message || 'Você já enviou o resumo desta semana.');
         else throw new Error(data.message || 'Erro ao enviar resumo.');
@@ -1266,7 +1933,7 @@ const ResumoPaciente = () => {
             onChange={(e) => setResumoSemanal(e.target.value)}
             className="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-teal-500 focus:border-teal-500"
             placeholder="Esta semana eu me senti..."
-            disabled={isSubmitting || !!success}
+            disabled={isSubmitting || !!success || isDisabled}
           ></textarea>
         </div>
          <div>
@@ -1279,10 +1946,10 @@ const ResumoPaciente = () => {
             onChange={(e) => setExpectativaSemana(e.target.value)}
             className="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-teal-500 focus:border-teal-500"
             placeholder="Eu gostaria de..."
-            disabled={isSubmitting || !!success}
+            disabled={isSubmitting || !!success || isDisabled}
           ></textarea>
         </div>
-        {!success && (
+        {!success && !isDisabled && (
           <BotaoSubmit label="Enviar Resumo" labelLoading="Enviando..." isLoading={isSubmitting} icon={<FileText />} />
         )}
       </form>
@@ -1361,6 +2028,8 @@ const BotaoSubmit = ({ label, labelLoading, isLoading, icon }) => (
 // --- Componente Principal (App) ---
 
 function App() {
+  const { isTestMode } = useTestMode();
+
   return (
     <AuthProvider>
       <BrowserRouter>

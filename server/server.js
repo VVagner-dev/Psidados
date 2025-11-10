@@ -25,9 +25,25 @@ const app = express();
 const PORT = process.env.PORT || 3001;
 
 // --- Middlewares Essenciais ---
-app.use(cors()); // Permite acesso de outros domínios (frontend)
+app.use(cors({
+  origin: 'http://localhost:5173',
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+}));
 app.use(express.json()); // Permite ao Express ler JSON do body
 app.use(express.urlencoded({ extended: true })); // Permite ler dados de formulários
+
+// --- Tratador de erro para JSON inválido enviado pelo cliente ---
+// Este middleware captura erros de parse feitos pelo body-parser/express.json
+// e retorna um JSON com mensagem de erro em vez da página HTML padrão.
+app.use((err, req, res, next) => {
+    if (err && (err instanceof SyntaxError || err.type === 'entity.parse.failed')) {
+        console.error('[ERRO] JSON inválido no corpo da requisição:', err.message);
+        return res.status(400).json({ message: 'JSON inválido no corpo da requisição.' });
+    }
+    next();
+});
 
 // --- Rotas da API ---
 // O Express vai "ligar" os prefixos de URL aos ficheiros de rotas corretos

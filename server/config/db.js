@@ -17,10 +17,20 @@ const pool = new Pool({
       rejectUnauthorized: false
     },
 });
+// Testa a conexão assim que o módulo é carregado e loga o resultado
+pool.connect()
+  .then(client => {
+    client.release();
+    console.log('✅ Conexão com o banco de dados estabelecida com sucesso.');
+  })
+  .catch(err => {
+    console.error('❌ Falha ao conectar ao banco de dados:', err.message || err);
+    // Não encerra o processo automaticamente para permitir depuração local,
+    // mas o log acima ajudará a identificar problemas de credenciais/SSL.
+  });
 
-// Exporta um objeto com um método "query"
-// Isso permite que o resto da nossa aplicação execute queries
-// de forma simples, ex: db.query("SELECT * FROM ...")
+// Exporta um objeto com um método "query" e também o pool caso seja necessário
 module.exports = {
     query: (text, params) => pool.query(text, params),
+    pool
 };

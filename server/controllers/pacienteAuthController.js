@@ -32,28 +32,43 @@ const loginPaciente = async (req, res) => {
         const paciente = result.rows[0];
 
         // 4. Gerar um Token JWT para o paciente
-        // Este token só contém o ID do paciente e seu "tipo"
+        const iat = Math.floor(Date.now() / 1000);
         const payload = {
             id: paciente.id,
-            tipo: 'paciente' // Importante para diferenciar do token do psicólogo
+            nome: paciente.nome,
+            email: paciente.email,
+            tipo: 'paciente',
+            iat: iat,
+            exp: iat + (24 * 60 * 60), // 24 horas a partir de agora
+            nbf: iat // válido imediatamente
         };
 
         const token = jwt.sign(
             payload,
-            process.env.JWT_SECRET, // Usamos a mesma chave secreta do .env
-            { expiresIn: '8h' }
+            process.env.JWT_SECRET,
+            { 
+                algorithm: 'HS256'
+            }
         );
 
-        // 5. Enviar o token e os dados do paciente
-        res.status(200).json({
+        // 5. Preparar resposta com dados completos
+        const responseData = {
             message: "Login do paciente realizado com sucesso!",
             token: token,
             paciente: {
                 id: paciente.id,
                 nome: paciente.nome,
                 email: paciente.email
+            },
+            auth: {
+                iat: payload.iat,
+                exp: payload.exp,
+                tipo: 'paciente'
             }
-        });
+        };
+
+        // Enviar resposta
+        res.status(200).json(responseData);
 
     } catch (error) {
         console.error("Erro no login do paciente:", error);

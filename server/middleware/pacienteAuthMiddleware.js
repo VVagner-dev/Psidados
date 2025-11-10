@@ -5,44 +5,76 @@ const jwt = require('jsonwebtoken');
 const db = require('../config/db');
 
 const protegerPaciente = async (req, res, next) => {
-    let token;
+    console.log('=== Iniciando validação de token ===');
+    console.log('Headers recebidos:', {
+        auth: req.headers.authorization ? 'Presente' : 'Ausente',
+        contentType: req.headers['content-type']
+    });
 
-    // 1. Verificar se o token 'Bearer' existe no header
-    if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
-        try {
-            // 2. Extrair o token
-            token = req.headers.authorization.split(' ')[1];
-
-            // 3. Verificar o token
-            const decoded = jwt.verify(token, process.env.JWT_SECRET);
-
-            // 4. VERIFICAR SE É UM TOKEN DE PACIENTE
-            if (decoded.tipo !== 'paciente') {
-                return res.status(401).json({ message: 'Não autorizado, token inválido.' });
-            }
-
-            // 5. Buscar o paciente no banco de dados
-            const query = "SELECT id, nome, email, psicologo_id FROM pacientes WHERE id = $1";
-            const result = await db.query(query, [decoded.id]);
-
-            if (result.rows.length === 0) {
-                return res.status(401).json({ message: 'Não autorizado, paciente não encontrado.' });
-            }
-
-            // 6. Anexar os dados do paciente ao 'req'
-            req.paciente = result.rows[0];
-            
-            // 7. Passar para o próximo middleware/controller
-            next();
-
-        } catch (error) {
-            console.error('Erro no middleware do paciente:', error);
-            res.status(401).json({ message: 'Não autorizado, token falhou.' });
+    try {
+        // 1. Verificar se o header de autorização existe e está no formato correto
+        const authHeader = req.headers.authorization;
+        if (!authHeader) {
+            console.log('Header de autorização ausente');
+            return res.status(401).json({ message: 'Não autorizado, sem token.' });
         }
-    }
 
-    if (!token) {
-        res.status(401).json({ message: 'Não autorizado, sem token.' });
+        // 2. Verificar se é um token Bearer válido
+        if (!authHeader.startsWith('Bearer ')) {
+            console.log('Token não está no formato Bearer');
+            return res.status(401).json({ message: 'Formato de token inválido.' });
+        }
+
+        // 3. Extrair e verificar o token
+        const token = authHeader.split(' ')[1];
+        if (!token) {
+            console.log('Token não encontrado após Bearer');
+            return res.status(401).json({ message: 'Token não fornecido.' });
+        }
+
+        // 4. Decodificar o token
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        console.log('Token decodificado:', { id: decoded.id, tipo: decoded.tipo });
+
+        // 5. Validar tipo de usuário
+        if (decoded.tipo !== 'paciente') {
+            console.log('Token não é do tipo paciente:', decoded.tipo);
+            return res.status(401).json({ message: 'Token inválido: tipo de usuário incorreto.' });
+        }
+
+        // 6. Validar ID do paciente
+        if (!decoded.id) {
+            console.log('Token não contém ID do paciente');
+            return res.status(401).json({ message: 'Token inválido: ID não encontrado.' });
+        }
+
+        // 7. Buscar paciente no banco
+        const query = "SELECT id, email, psicologo_id FROM pacientes WHERE id = $1";
+        const result = await db.query(query, [decoded.id]);
+
+        if (result.rows.length === 0) {
+            console.log('Paciente não encontrado:', decoded.id);
+            return res.status(401).json({ message: 'Paciente não encontrado.' });
+        }
+
+        // 8. Anexar dados ao request
+        req.paciente = {
+            ...result.rows[0],
+            tipo: 'paciente'
+        };
+
+        console.log('Validação concluída com sucesso para paciente:', req.paciente.id);
+        next();
+
+    } catch (error) {
+        console.error('Erro na validação do token:', error.message);
+        if (error.name === 'JsonWebTokenError') {
+            return res.status(401).json({ message: 'Token inválido.' });
+        }
+        if (error.name === 'TokenExpiredError') {
+            return res.status(401).json({ message: 'Token expirado.' });
+        }
+        return res.status(401).json({ message: 'Falha na autenticação.' });
     }
 };
 

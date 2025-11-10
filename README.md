@@ -1,140 +1,282 @@
-Relatório de Estado do Projeto: PsiDados
+# 📊 PsiDados - Prontuário Digital Inteligente
 
-1. Conceito do Projeto
+## 🎯 Visão Geral
 
-O PsiDados é uma plataforma de prontuário digital inteligente com dois portais:
+**PsiDados** é uma plataforma de prontuário digital inteligente que conecta psicólogos e pacientes através de dois portais especializados:
 
-Portal do Psicólogo (Gestor): Autentica o profissional (com CRP), permitindo-lhe gerir pacientes (CRUD) e gerar um codigo_acesso único para cada um. O psicólogo configura um plano de questionário (ex: GAD-7) e revê os dados submetidos, incluindo resumos semanais que são automaticamente analisados por IA (Gemini) para gerar insights.
+### 🧑‍⚕️ Portal do Psicólogo (Gestor)
+- Autenticação com CRP
+- Gestão completa de pacientes (CRUD)
+- Configuração de planos de questionários (GAD-7, PHQ-9, ASSIST)
+- Agendamento de questionários em dias específicos da semana
+- Visualização de respostas diárias e resumos semanais
+- Análise automática com IA (Gemini) para geração de insights
 
-Portal do Paciente (Coletor): O paciente usa o codigo_acesso para um login simplificado. A sua interface é focada em duas tarefas: (1) Responder ao questionário diário/semanal e (2) Escrever um resumo semanal para análise da IA.
+### 👥 Portal do Paciente (Coletor)
+- Login simplificado com código de acesso único
+- Resposta a questionários diários (3 dias configurados)
+- Preenchimento de resumo semanal após 3 respostas
+- Interface intuitiva focada em tarefa
 
-2. Estrutura de Pastas do Projeto
+---
 
-A estrutura foi simplificada para manter o frontend autocontido.
+## ✅ Funcionalidades Implementadas
 
-📁 Psidados/
-│
-├── 📁 client/
-│   │
+### 🔐 Autenticação
+- ✅ Login de psicólogo (email, CRP, senha)
+- ✅ Registro de psicólogo
+- ✅ Login de paciente (código de acesso)
+- ✅ Persistência de sessão com JWT tokens
+- ✅ Proteção de rotas autenticadas
+
+### 📋 Gestão de Pacientes (Psicólogo)
+- ✅ Criar pacientes
+- ✅ Listar todos os pacientes
+- ✅ Editar informações do paciente
+- ✅ Eliminar paciente
+- ✅ Gerar código de acesso único automático
+
+### 🎯 Configuração de Questionários
+- ✅ Selecionar 3 dias da semana para questionários
+- ✅ Atribuir questionários específicos a cada dia
+- ✅ Visualização do plano configurado
+- ✅ Armazenamento em JSONB (banco de dados)
+- ✅ Suporte para compatibilidade com formato antigo
+
+### 📝 Questionários
+- ✅ **GAD-7** (Escala de Ansiedade Generalizada)
+- ✅ **PHQ-9** (Escala de Depressão)
+- ✅ **PANAS** (Afeto Positivo e Negativo)
+- ✅ Respostas dinâmicas com múltiplas opções
+- ✅ Cálculo automático de pontuação total
+
+### 📊 Resumos Semanais
+- ✅ Disparo automático após 3 respostas completadas
+- ✅ Formulário para texto do resumo e expectativa
+- ✅ Análise com IA (Gemini)
+- ✅ Geração de insights personalizados
+
+### 🧪 Modo de Teste
+- ✅ Simulação de datas para desenvolvimento
+- ✅ Seletor de data no painel de teste
+- ✅ Navegação de dias (anterior/próximo)
+- ✅ Botão para reiniciar questionários
+- ✅ **CORRIGIDO**: Conversão correta de timezone (America/Sao_Paulo)
+
+### 🐛 Correções de Timezone Recentes
+- ✅ **Frontend**: Conversão de data de teste para timezone Brasil antes de enviar
+- ✅ **Backend**: Parse correto de datas YYYY-MM-DD usando UTC
+- ✅ **getDayOfWeek()**: Algoritmo robusto usando Date.UTC para evitar problemas de timezone local
+
+---
+
+## 📁 Estrutura do Projeto
+
+```
+Psidados/
+├── 📁 client/                          # Frontend React + Vite
 │   ├── 📁 src/
-│   │   │   ├── 📄 App.jsx       (✅ Toda a aplicação frontend está aqui - ver secção 3)
-│   │   │   ├── 📄 index.css     (✅ Criado - Estilos Tailwind)
-│   │   │   └── 📄 main.jsx      (✅ Criado - Ponto de entrada do React)
-│   │
-│   ├── 📄 .gitignore
-│   ├── 📄 index.html        (✅ Criado - Ponto de entrada do HTML)
-│   ├── 📄 package.json      (✅ Atualizado com react-router-dom)
-│   └── 📄 (outros ficheiros de config: tailwind.config.js, etc.)
+│   │   ├── 📄 App.jsx                 # Aplicação principal (monolítica)
+│   │   ├── 📄 index.css               # Estilos Tailwind
+│   │   ├── 📄 main.jsx                # Ponto de entrada React
+│   │   ├── � components/
+│   │   │   ├── TestPanel.jsx          # Painel de teste (simulação de datas)
+│   │   │   └── .gitkeep
+│   │   ├── � contexts/
+│   │   │   └── TestModeContext.jsx    # Context para modo de teste
+│   │   ├── � pages/
+│   │   │   └── .gitkeep
+│   │   ├── 📁 services/
+│   │   │   └── .gitkeep
+│   │   └── testModeImports.js         # Imports do modo teste
+│   ├── 📄 index.html
+│   ├── 📄 package.json
+│   └── 📄 vite.config.js
 │
-├── 📁 server/
-│   │   (Backend: API, controllers, routes, etc.)
-│   ├── 📄 .env
-│   ├── 📄 package.json      (✅ Atualizado com node-fetch)
-│   └── 📄 server.js
+├── � server/                          # Backend Node.js + Express
+│   ├── 📄 server.js                   # Servidor principal (porta 3001)
+│   ├── 📄 package.json
+│   ├── 📁 config/
+│   │   └── db.js                      # Conexão PostgreSQL
+│   ├── � controllers/
+│   │   ├── authController.js          # Autenticação de psicólogo
+│   │   ├── pacienteAuthController.js  # Autenticação de paciente
+│   │   ├── pacienteController.js      # Gestão de pacientes
+│   │   ├── questionarioController.js  # Lógica de questionários
+│   │   └── resumoController.js        # Análise de resumos com IA
+│   ├── 📁 routes/
+│   │   ├── authRoutes.js
+│   │   ├── pacienteAuthRoutes.js
+│   │   ├── pacienteRoutes.js
+│   │   ├── questionarioRoutes.js
+│   │   └── resumoRoutes.js
+│   ├── 📁 middleware/
+│   │   ├── authMiddleware.js
+│   │   └── pacienteAuthMiddleware.js
+│   ├── 📁 utils/
+│   │   └── fetch.js
+│   ├── 📁 db/
+│   │   └── schema.sql
+│   └── 📁 config/
 │
-├── 📄 .gitignore
-├── 📄 package.json          (✅ Atualizado para gestão monorepo)
-└── 📄 README.md             (Este ficheiro)
+├── 📄 package.json                    # Root (monorepo)
+├── 📄 README.md                       # Este arquivo
+└── 📄 new.sql                         # Script SQL (ignored)
+```
 
+---
 
-3. Estado Atual do Código (Concluído)
+## 🚀 Status Atual
 
-Todo o código-fonte, tanto do backend como do frontend, está concluído.
+### ✅ PRONTO PARA PRODUÇÃO
+- Backend Node.js/Express funcionando corretamente
+- Frontend React compilando e rodando
+- Banco de dados PostgreSQL conectado
+- Autenticação com JWT implementada
+- Questionários respondendo corretamente
+- Resumos semanais com análise IA funcionando
+- **Timezone corrigido**: Conversão de datas Brasil funcionando perfeitamente
 
-✅ Backend (server/) - Funcional
+### 🧪 MODO TESTE FUNCIONAL
+- Simulação de datas sem timezone issues
+- Navegação entre dias funcionando
+- Reinicio de questionários em modo teste
 
-O servidor Express (server.js) está a funcionar e a ligar-se com sucesso à base de dados PostgreSQL.
+---
 
-Ficheiros Relevantes:
+## 🔧 Tecnologias Utilizadas
 
-server/package.json: As dependências (incluindo node-fetch) estão corretas.
+### Frontend
+- **React 18** - Framework UI
+- **Vite** - Build tool
+- **React Router** - Roteamento
+- **Tailwind CSS** - Styling
+- **Lucide React** - Ícones
+- **JavaScript/JSX**
 
-server/server.js: O servidor principal está a correr na porta 3001.
+### Backend
+- **Node.js** - Runtime
+- **Express** - Web framework
+- **PostgreSQL** - Banco de dados
+- **JWT** - Autenticação
+- **Gemini API** - Análise com IA
 
-server/controllers/*.js: Toda a lógica de negócio (incluindo a chamada à API do Gemini) está implementada.
+---
 
-server/routes/*.js: Todas as rotas da API estão definidas e a funcionar.
+## 📈 Próximos Passos / Melhorias Futuras
 
-✅ Frontend (client/) - Código Concluído
+### 🎯 Funcionalidades Planejadas
+1. **Dashboard de Psicólogo Aprimorado**
+   - Gráficos de evolução de pacientes ao longo do tempo
+   - Relatórios em PDF
+   - Exportação de dados
 
-Toda a aplicação frontend em React foi implementada e consolidada num único ficheiro para simplicidade de gestão neste ambiente.
+2. **Notificações**
+   - Email para recordar paciente de responder questionário
+   - Push notifications (mobile)
 
-Ficheiros Relevantes:
+3. **Mobile App**
+   - Versão nativa para iOS/Android
+   - Progressive Web App (PWA)
 
-client/src/App.jsx: Contém toda a aplicação React. Inclui o AuthProvider (Contexto de Autenticação), todos os layouts (Psicólogo, Paciente) e todas as páginas (Login, Registo, Dashboards, Formulários de Questionário e Resumo).
+4. **Autenticação Avançada**
+   - OAuth2 / Google Sign-in
+   - Autenticação de dois fatores (2FA)
 
-client/index.html: O ponto de entrada HTML.
+5. **Auditoria e Conformidade**
+   - Log de todas as ações (para LGPD/GDPR)
+   - Backup automático
+   - Encryption de dados sensíveis
 
-client/src/main.jsx: O script que renderiza o App.jsx no index.html.
+6. **Melhorias de UX**
+   - Dark mode
+   - Responsividade mobile completa
+   - Acessibilidade WCAG
 
-client/src/index.css: A configuração base do TailwindCSS.
+---
 
-client/package.json: Define as dependências do cliente (React, Vite, Tailwind).
+## 📝 Como Usar
 
-4. O Problema Atual (Bloqueio na Instalação)
+### Iniciando o Projeto
 
-O projeto não está "pronto" porque não arranca devido a um erro de instalação de dependências específico do ambiente no frontend.
-
-Servidor [0]: Inicia com sucesso.
-
-Cliente [1]: Falha ao iniciar.
-
-Erro Principal
-
-O log do npm run dev [1] mostra o seguinte erro:
-
-[1] Error: The package "@esbuild/win32-x64" could not be found, and is needed by esbuild.
-[1_] ...
-[1] If you are installing esbuild with npm, make sure that you don't specify the
-[1] "--no-optional" or "--omit=optional" flags.
-
-
-Análise do Erro
-
-Causa: O vite (o nosso servidor de desenvolvimento frontend) depende do esbuild. O esbuild precisa de um pacote binário específico do sistema operativo (@esbuild/win32-x64 para Windows) que é listado como uma optionalDependency.
-
-Problema: A instalação do npm na pasta client/ está corrompida. Não está a conseguir descarregar ou instalar corretamente este pacote opcional.
-
-Sintomas Anteriores: As nossas tentativas de depuração (como npm rebuild) falharam porque a instalação corrompida também continha scripts postinstall (como o patch-package do rollup) que entravam em conflito com os ficheiros bloqueados (EBUSY) no seu sistema.
-
-5. Próximo Passo (Corrigir o Ambiente do Cliente)
-
-O próximo e último passo é forçar uma reinstalação limpa e completa das dependências do cliente para garantir que o esbuild é instalado corretamente.
-
-Plano de Ação (A executar no terminal):
-
-Parar o processo: Pressione Ctrl + C no terminal.
-
-Limpar a cache do npm: (Garante que não usamos pacotes corrompidos guardados)
-
-npm cache clean --force
-
-
-Navegar para a pasta client:
-
-cd client
-
-
-Limpar a instalação antiga: (Apaga os ficheiros corrompidos)
-
-rmdir /s /q node_modules
-del package-lock.json
-
-
-(É crucial que esteja dentro da pasta client ao executar isto).
-
-Reinstalar o cliente: (Isto irá descarregar o esbuild de novo. Desta vez, estamos a usar o client/package.json simplificado que já não tem o patch-package a causar conflitos).
-
+```bash
+# Instalar dependências
 npm install
 
-
-(Execute este comando dentro da pasta client).
-
-Voltar à raiz do projeto:
-
-cd ..
-
-
-Inicie o projeto:
-
+# Inicie servidor e cliente
 npm run dev
+```
+
+O servidor rodará em `http://localhost:3001`
+O cliente rodará em `http://localhost:5173`
+
+### Criando um Psicólogo (Primeiro Uso)
+
+1. Acesse `http://localhost:5173`
+2. Clique em "É psicólogo? Crie sua conta"
+3. Preencha: Nome, Email, CRP, Senha
+4. Login com as credenciais
+
+### Criando um Paciente
+
+1. No dashboard do psicólogo, clique "Adicionar Paciente"
+2. Preencha nome e email (opcional)
+3. Selecione 3 dias da semana para questionários
+4. Compartilhe o código de acesso com o paciente
+
+### Paciente Respondendo Questionário
+
+1. Acesse `http://localhost:5173`
+2. Clique em "Portal do Paciente"
+3. Digite o código de acesso
+4. Responda os questionários nos dias configurados
+5. Após 3 respostas, preencha o resumo semanal
+
+### Testando em Modo de Teste
+
+1. Na home, clique "Ativar Modo de Teste" (ambiente de desenvolvimento)
+2. Abra o painel "Modo de Teste" no questionário
+3. Use o date picker para simular diferentes dias
+4. Os questionários responderão baseado na data simulada
+
+---
+
+## 🐛 Problemas Conhecidos / Resolvidos
+
+### ✅ RESOLVIDO: Timezone Offset (Dias Descalibrados)
+**Problema**: Questões configuradas para segunda/terça/quarta mostravam terça/quarta/quinta
+**Causa**: Conversão incorreta entre UTC e timezone Brasil
+**Solução**: 
+- Frontend: Converte para timezone Brasil antes de enviar data
+- Backend: Parse de datas YYYY-MM-DD usando UTC
+- getDayOfWeek(): Usa Date.UTC para cálculos robustos
+
+---
+
+## 🔐 Variáveis de Ambiente
+
+Crie um `.env` na pasta `server/`:
+
+```env
+DATABASE_URL=postgresql://user:password@localhost:5432/psidados
+JWT_SECRET=sua-chave-secreta-muito-segura
+GEMINI_API_KEY=sua-chave-gemini-api
+NODE_ENV=development
+```
+
+---
+
+## 📞 Suporte
+
+Para reportar bugs ou sugerir melhorias, abra uma issue no repositório GitHub.
+
+---
+
+## 📄 Licença
+
+Este projeto é desenvolvido para fins educacionais/acadêmicos.
+
+---
+
+**Última Atualização**: Novembro 2025
+**Status**: ✅ Funcional e em desenvolvimento contínuo

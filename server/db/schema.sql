@@ -53,6 +53,7 @@ CREATE TABLE config_questionarios (
     frequencia_dias VARCHAR(20)[] NOT NULL, -- Array de texto: {'segunda', 'quarta', 'sexta'}
     tipo_questionario VARCHAR(100) NOT NULL, -- (ex: "questionario1", "questionario2")
     perguntas JSONB,                     -- JSONB para guardar as perguntas (que vêm do mapa de constantes)
+    configuracao JSONB                    -- Nova coluna: mapeamento dia -> questionário (ex: [{"dia":"segunda","questionario":"questionario1"}, ...])
     
     CONSTRAINT fk_paciente
         FOREIGN KEY(paciente_id)

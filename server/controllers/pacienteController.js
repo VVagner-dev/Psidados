@@ -7,12 +7,17 @@ const db = require('../config/db');
  */
 const criarPaciente = async (req, res) => {
     try {
-        const { nome, email } = req.body;
-        const psicologoId = req.psicologo.id; // Vem do middleware 'authMiddleware'
+        console.log('Received request body:', req.body); // Debug log
+        const psicologoId = req.psicologo.id;
+        const nome_completo = req.body.nome;
+        let email = req.body.email;
 
-        if (!nome) {
+        if (!nome_completo) {
             return res.status(400).json({ message: 'O nome é obrigatório.' });
         }
+
+        // Converter string vazia em NULL para evitar violação de UNIQUE constraint
+        email = (email && email.trim()) ? email.trim() : null;
 
         // 1. Gerar um código de acesso único (ex: "EXLT5N")
         // Esta é uma função simples; em produção, seria bom verificar se já existe
@@ -24,17 +29,22 @@ const criarPaciente = async (req, res) => {
             VALUES ($1, $2, $3, $4)
             RETURNING *; 
         `;
-        const values = [nome, email || null, codigo_acesso, psicologoId];
+        const values = [nome_completo, email, codigo_acesso, psicologoId];
         
         const result = await db.query(query, values);
 
         res.status(201).json({
             message: "Paciente criado com sucesso!",
+            id: result.rows[0].id,
+            codigo_acesso: result.rows[0].codigo_acesso,
+            nome: result.rows[0].nome,
             paciente: result.rows[0]
         });
 
     } catch (error) {
         console.error("Erro ao criar paciente:", error);
+        console.error("Erro code:", error.code);
+        console.error("Erro message:", error.message);
         if (error.code === '23505') { // Código de violação de unicidade (ex: email ou codigo_acesso)
             return res.status(409).json({ message: "Já existe um paciente com este email ou o código gerado colidiu. Tente novamente." });
         }
@@ -51,7 +61,7 @@ const listarPacientes = async (req, res) => {
     try {
         const psicologoId = req.psicologo.id;
         
-        const query = 'SELECT * FROM pacientes WHERE psicologo_id = $1 ORDER BY nome ASC';
+        const query = 'SELECT id, nome, email, codigo_acesso, psicologo_id, created_at FROM pacientes WHERE psicologo_id = $1 ORDER BY nome ASC';
         const result = await db.query(query, [psicologoId]);
 
         res.status(200).json(result.rows);
