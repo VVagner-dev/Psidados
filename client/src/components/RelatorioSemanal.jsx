@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, BarChart, Bar } from 'recharts';
 import { Download, Loader, FileDown, ArrowLeft, TrendingUp, AlertTriangle, CheckCircle2, Info, FileText } from 'lucide-react';
-import html2pdf from 'html2pdf.js';
 
 const CORES_PIE = ['#ef4444', '#f59e0b', '#3b82f6', '#10b981', '#8b5cf6'];
 
@@ -82,26 +81,6 @@ export default function RelatorioSemanal({ pacienteId, token, onVoltar }) {
     }
   };
 
-  const exportarPDF = async () => {
-    if (!relatorioRef.current) return;
-
-    try {
-      const element = relatorioRef.current;
-      const opt = {
-        margin: 10,
-        filename: `Relatorio_Semanal_${new Date().toISOString().split('T')[0]}.pdf`,
-        image: { type: 'jpeg', quality: 0.98 },
-        html2canvas: { scale: 2 },
-        jsPDF: { orientation: 'portrait', unit: 'mm', format: 'a4' }
-      };
-
-      html2pdf().set(opt).from(element).save();
-    } catch (error) {
-      console.error('Erro ao gerar PDF:', error);
-      setErro('Erro ao exportar PDF');
-    }
-  };
-
   if (loading) {
     return (
       <div className="flex items-center justify-center h-screen bg-gradient-to-br from-slate-50 to-slate-100">
@@ -173,13 +152,6 @@ export default function RelatorioSemanal({ pacienteId, token, onVoltar }) {
             </div>
           </div>
           <div className="flex gap-2">
-            <button
-              onClick={exportarPDF}
-              className="px-3 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg flex items-center gap-2 font-medium transition text-sm"
-            >
-              <FileDown size={16} />
-              PDF
-            </button>
             {onVoltar && (
               <button
                 onClick={onVoltar}
@@ -197,7 +169,7 @@ export default function RelatorioSemanal({ pacienteId, token, onVoltar }) {
       <div ref={relatorioRef} className="max-w-7xl mx-auto p-6 space-y-6">
         
         {/* Scores + Resumo */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           
           {/* Gráfico Pizza */}
           <div className="bg-white rounded-lg shadow-md border border-slate-200 p-6 hover:shadow-lg transition">
@@ -308,7 +280,7 @@ export default function RelatorioSemanal({ pacienteId, token, onVoltar }) {
 
           {relatorio.resumo_semanal?.resumo_geral ? (
             <div className="bg-slate-50 p-6 rounded-lg border border-slate-200">
-              <div className="text-slate-800 leading-relaxed space-y-3 text-sm">
+              <div className="text-slate-800 leading-relaxed space-y-4 text-sm whitespace-pre-line break-words">
                 {relatorio.resumo_semanal.resumo_geral}
               </div>
               <div className="mt-4 text-xs text-slate-600 border-t border-slate-200 pt-3">
@@ -334,7 +306,7 @@ export default function RelatorioSemanal({ pacienteId, token, onVoltar }) {
 
           {relatorio.resumo_semanal?.analise_pontos ? (
             <div className="bg-slate-50 p-6 rounded-lg border border-slate-200">
-              <div className="text-slate-800 leading-relaxed space-y-3 text-sm">
+              <div className="text-slate-800 leading-relaxed space-y-4 text-sm whitespace-pre-line break-words">
                 {relatorio.resumo_semanal.analise_pontos}
               </div>
               <div className="mt-4 text-xs text-slate-600 border-t border-slate-200 pt-3">
@@ -448,7 +420,7 @@ export default function RelatorioSemanal({ pacienteId, token, onVoltar }) {
                   {/* Análise Individual (IA) */}
                   {analiseIndividual ? (
                     <div className="bg-slate-50 p-4 rounded-lg border-l-4 mb-4" style={{ borderColor: q.cor }}>
-                      <p className="text-slate-800 leading-relaxed text-sm">
+                      <p className="text-slate-800 leading-relaxed text-sm whitespace-pre-line break-words">
                         {analiseIndividual}
                       </p>
                     </div>

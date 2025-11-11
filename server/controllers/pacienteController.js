@@ -88,11 +88,37 @@ const buscarPacientePorId = async (req, res) => {
             return res.status(404).json({ message: "Paciente não encontrado ou não pertence a este psicólogo." });
         }
 
-        res.status(200).json(result.rows[0]);
-    } catch (error) {
-        console.error("Erro ao buscar paciente:", error);
-        res.status(500).json({ message: "Erro interno no servidor." });
-    }
+        // Preparar dados do paciente para resposta, incluindo configuração de questionários se existir
+        const pacienteRow = result.rows[0];
+
+        // Buscar a configuração de questionários deste paciente (se existir)
+        const configResult = await db.query(
+            'SELECT tipo_questionario, frequencia_dias, configuracao FROM config_questionarios WHERE paciente_id = $1',
+            [id]
+        );
+
+        const pacienteData = { ...pacienteRow };
+
+        if (configResult.rows.length > 0) {
+            const config = configResult.rows[0];
+            pacienteData.tipo_questionario = config.tipo_questionario;
+            pacienteData.frequencia_dias = config.frequencia_dias;
+            pacienteData.configuracao = config.configuracao;
+            // Campos compatíveis com o frontend
+            pacienteData.questionario_nome = config.tipo_questionario;
+            pacienteData.frequencia = (config.frequencia_dias && config.frequencia_dias.length > 0)
+                ? config.frequencia_dias.join(', ')
+                : 'N/A';
+        } else {
+            pacienteData.questionario_nome = null;
+            pacienteData.frequencia = 'N/A';
+        }
+
+        return res.status(200).json(pacienteData);
+        } catch (error) {
+            console.error("Erro ao buscar paciente:", error);
+            res.status(500).json({ message: "Erro interno no servidor." });
+        }
 };
 
 /**

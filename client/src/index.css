@@ -26,6 +26,30 @@
   --border-medium: #cbd5e1;
 }
 
+/* Tema escuro (classe aplicada em <html> como .theme-dark) */
+.theme-dark {
+  --primary: #818cf8;
+  --primary-light: #a78bfa;
+  --primary-dark: #4f46e5;
+  --secondary: #f472b6;
+  --success: #10b981;
+  --warning: #f59e0b;
+  --danger: #ef4444;
+  --info: #3b82f6;
+  --bg-primary: #0b1220;
+  --bg-secondary: #071124;
+  --bg-tertiary: #0f1724;
+  --text-primary: #e6eef8;
+  --text-secondary: #93c5fd;
+  --border-light: #1f2937;
+  --border-medium: #374151;
+}
+
+/* Tema claro explícito (classe aplicada em <html> como .theme-light) */
+.theme-light {
+  /* reusa as variáveis do :root (light defaults) */
+}
+
 * {
   margin: 0;
   padding: 0;
@@ -254,3 +278,33 @@ body {
     @apply w-full;
   }
 }
+
+/* ═══════════════════════════════════════════════════════════════════ */
+/* FORMATAÇÃO DE TEXTOS COM QUEBRA DE LINHA (IA)                     */
+/* ═══════════════════════════════════════════════════════════════════ */
+
+/* Preserve quebras de linha e espaçamento de parágrafos */
+.whitespace-pre-line {
+  white-space: pre-line;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+}
+
+/* Adiciona espaçamento entre parágrafos */
+.text-ia {
+  margin-bottom: 1rem;
+  padding: 1rem;
+  line-height: 1.8;
+  letter-spacing: 0.3px;
+}
+
+.text-ia p {
+  margin-bottom: 0.75rem;
+}
+
+/* Melhor legibilidade para textos longos */
+.text-ia strong {
+  font-weight: 600;
+  color: #1e293b;
+}
+

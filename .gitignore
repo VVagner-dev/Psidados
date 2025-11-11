@@ -1,0 +1,18 @@
+.env
+
+# Ignore node modules
+node_modules/
+client/node_modules/
+
+# Vite dev cache
+.vite/
+
+# Logs and runtime files
+logs/
+
+# OS files
+.DS_Store
+
+# Build outputs
+dist/
+build/

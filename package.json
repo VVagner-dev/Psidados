@@ -7,6 +7,8 @@
     "server": "npm run dev --prefix server",
     "client": "npm run dev --prefix client",
     "dev": "concurrently \"npm run server\" \"npm run client\"",
+    "start:all": "python ./scripts/start_servers.py --wait",
+    "start:all-js": "node ./scripts/start_servers.js --wait",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],

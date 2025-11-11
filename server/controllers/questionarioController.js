@@ -316,15 +316,26 @@ const salvarRespostaDiaria = async (req, res) => {
         // Determinar a data a ser usada na verificação
         let dataParaVerificacao = new Date().toISOString().split('T')[0];
         let dataConsulta = new Date();
-        
-        if (isTestMode && dataResposta) {
+
+        // Se o frontend fornecer dataResposta (refazer um dia anterior), usar essa data
+        if (dataResposta) {
             // dataResposta vem como "YYYY-MM-DD" em Brasil timezone
             dataParaVerificacao = dataResposta;
-            // Criar um Date que represente meia-noite em São Paulo nessa data
             const [ano, mes, dia] = dataResposta.split('-');
-            // Meia-noite em São Paulo = 3 horas depois em UTC (GMT-3)
+            // Criar Date UTC representando meia-noite em São Paulo naquela data
             dataConsulta = new Date(Date.UTC(ano, parseInt(mes) - 1, dia, 3, 0, 0));
-            console.log(`🕐 [salvarRespostaDiaria] Teste: Parse date "${dataResposta}" -> ${dataConsulta.toISOString()} (meia-noite em SP)`);
+            console.log(`🕐 [salvarRespostaDiaria] dataResposta fornecida: Parse date "${dataResposta}" -> ${dataConsulta.toISOString()} (meia-noite em SP)`);
+
+            // Validação de segurança: permitir retroativo apenas para datas não futuras e até 6 dias no passado
+            const now = new Date();
+            const diffMs = now.getTime() - dataConsulta.getTime();
+            const diffDays = Math.floor(diffMs / (24 * 60 * 60 * 1000));
+            if (diffDays < 0) {
+                return res.status(400).json({ message: 'dataResposta não pode ser uma data futura.' });
+            }
+            if (diffDays > 6) {
+                return res.status(400).json({ message: 'Só é permitido refazer questionários da semana atual (até 6 dias retroativos).' });
+            }
         }
 
         // Determinar o dia da semana da data
@@ -363,32 +374,14 @@ const salvarRespostaDiaria = async (req, res) => {
         
         console.log(`✅ [salvarRespostaDiaria] Dia ${diaDaSemana} encontrado na configuração!`);
 
-        // Verificar se o paciente já respondeu hoje (apenas se não estiver em modo de teste)
-        if (!isTestMode) {
-            const queryJaRespondeu = `
-                SELECT * FROM respostas_diarias 
-                WHERE paciente_id = $1 AND data_resposta::date = CURRENT_DATE;
-            `;
-            const respostaHoje = await db.query(queryJaRespondeu, [pacienteId]);
-            
-            if (respostaHoje.rows.length > 0) {
-                return res.status(409).json({
-                    message: "Você já enviou a sua resposta de hoje."
-                });
-            }
-        } else {
-            // Em modo de teste, verificar na data específica
-            const queryJaRespondeu = `
-                SELECT * FROM respostas_diarias 
-                WHERE paciente_id = $1 AND data_resposta::date = $2;
-            `;
-            const respostaHoje = await db.query(queryJaRespondeu, [pacienteId, dataParaVerificacao]);
-            
-            if (respostaHoje.rows.length > 0) {
-                return res.status(409).json({
-                    message: "Você já enviou a sua resposta neste dia (modo teste)."
-                });
-            }
+        // Verificar se o paciente já respondeu na data alvo (seja hoje ou dataResposta fornecida)
+        const queryJaRespondeu = `
+            SELECT * FROM respostas_diarias 
+            WHERE paciente_id = $1 AND data_resposta::date = $2;
+        `;
+        const respostaHoje = await db.query(queryJaRespondeu, [pacienteId, dataParaVerificacao]);
+        if (respostaHoje.rows.length > 0) {
+            return res.status(409).json({ message: "Você já enviou a sua resposta nesta data." });
         }
 
         // Salvar no banco

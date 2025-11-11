@@ -24,36 +24,50 @@ const useAuth = () => {
   return useContext(AuthContext);
 };
 
-// Função para logs persistentes
+// Função para logs persistentes (simples wrapper)
 const persistentLog = (type, ...args) => {
-  const log = {
-    timestamp: new Date().toISOString(),
-    type,
-    message: args.map(arg => 
-      typeof arg === 'object' ? JSON.stringify(arg) : String(arg)
-    ).join(' ')
-  };
-  
-  // Manter logs no localStorage
-  const logs = JSON.parse(localStorage.getItem('debug_logs') || '[]');
-  logs.push(log);
-  localStorage.setItem('debug_logs', JSON.stringify(logs.slice(-50))); // Manter últimos 50 logs
-  
-  // Log normal no console
-  console[type](...args);
+  // type pode ser 'info'|'warn'|'error' etc.
+  if (type === 'error') console.error(...args);
+  else if (type === 'warn') console.warn(...args);
+  else console.log(...args);
 };
 
-// Parser seguro que evita 'Unexpected end of JSON input' quando o servidor
-// retorna uma resposta vazia ou HTML de erro. Disponível em todo o módulo.
+// Mapeador de nomes de questionários para exibição
+const getQuestionarioNome = (tipoQuestionario) => {
+  const mapa = {
+    'questionario1': 'GAD-7 (Ansiedade)',
+    'questionario2': 'PHQ-9 (Depressão)',
+    'questionario3': 'PANAS (Afeto Positivo e Negativo)',
+    'questBiomarkers': 'ASSIST (Uso de Substâncias)'
+  };
+  return mapa[tipoQuestionario] || tipoQuestionario;
+};
+
+// Helper: parse fetch Response safely and return { data, status }
 const safeParseResponse = async (response) => {
-  const text = await response.text();
-  let data = {};
-  try {
-    data = text ? JSON.parse(text) : {};
-  } catch (e) {
-    data = { message: text };
+  if (!response) return { data: null, status: 0 };
+  const status = response.status;
+  const ct = response.headers && response.headers.get ? response.headers.get('content-type') || '' : '';
+  if (ct.includes('application/json')) {
+    try {
+      const data = await response.json();
+      return { data, status };
+    } catch (err) {
+      try {
+        const text = await response.text();
+        return { data: { message: text }, status };
+      } catch (e) {
+        return { data: null, status };
+      }
+    }
+  } else {
+    try {
+      const text = await response.text();
+      return { data: { message: text }, status };
+    } catch (err) {
+      return { data: null, status };
+    }
   }
-  return { ok: response.ok, status: response.status, data, headers: response.headers };
 };
 
 // 2. Provedor de Autenticação
@@ -316,6 +330,8 @@ const PacienteLayout = () => {
             <span className="ml-2 font-bold text-2xl text-gray-800">PsiDados</span>
         </div>
         
+        {/* Histórico removido — mostrando apenas o Relatório Semanal quando solicitado */}
+
         <p className="text-center text-xl text-gray-700 mb-6">
           Olá, {paciente.nome}.
         </p>
@@ -1035,77 +1051,100 @@ const DashboardPsicologo = () => {
             </Link>
           </div>
         ) : (
-          <div className="grid grid-cols-1 gap-3">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {pacientes.map((p) => (
               <div
                 key={p.id}
-                className="bg-white rounded-lg border border-slate-200 p-4 hover:border-slate-300 hover:shadow-md transition cursor-pointer"
+                className="group bg-white rounded-xl border border-slate-200 p-6 hover:border-indigo-300 hover:shadow-lg transition-all cursor-pointer overflow-hidden relative"
                 onClick={() => navigate(`/psicologo/paciente/${p.id}/dashboard`)}
               >
-                <div className="flex items-center justify-between gap-4">
-                  {/* Avatar + Info */}
-                  <div className="flex items-center gap-3 flex-1 min-w-0">
-                    <div className={`flex-shrink-0 h-12 w-12 rounded-full ${getAvatarColor(p.nome)} flex items-center justify-center`}>
-                      <span className={`font-bold ${getAvatarTextColor(p.nome)}`}>
+                {/* Gradient Background */}
+                <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-50 rounded-full -mr-12 -mt-12 group-hover:bg-indigo-100 transition-colors"></div>
+                
+                {/* Content */}
+                <div className="relative z-10">
+                  {/* Avatar + Header */}
+                  <div className="flex items-start justify-between mb-4">
+                    <div className={`flex-shrink-0 h-16 w-16 rounded-full ${getAvatarColor(p.nome)} flex items-center justify-center shadow-md`}>
+                      <span className={`font-bold text-xl ${getAvatarTextColor(p.nome)}`}>
                         {p.nome.charAt(0).toUpperCase()}
                       </span>
                     </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="font-medium text-slate-900">{p.nome}</p>
-                      <p className="text-xs text-slate-500 truncate">{p.email}</p>
-                    </div>
-                  </div>
-
-                  {/* Ações - Menu Dropdown */}
-                  <div className="relative">
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
                         setOpenMenuId(openMenuId === p.id ? null : p.id);
                       }}
-                      className="p-2 hover:bg-slate-100 rounded-lg transition text-slate-600 hover:text-slate-900"
+                      className="p-2 hover:bg-slate-100 rounded-lg transition text-slate-400 hover:text-slate-600 opacity-0 group-hover:opacity-100"
                     >
-                      <MoreVertical size={18} />
+                      <MoreVertical size={20} />
                     </button>
+                  </div>
+
+                  {/* Paciente Info */}
+                  <div className="mb-4">
+                    <h3 className="font-bold text-lg text-slate-900 mb-1">{p.nome}</h3>
+                    <p className="text-sm text-slate-500 mb-3">{p.email}</p>
                     
-                    {openMenuId === p.id && (
-                      <div className="absolute right-0 top-full mt-1 bg-white border border-slate-200 rounded-lg shadow-lg z-10 min-w-40">
-                        <Link 
-                          to={`/psicologo/paciente/${p.id}/dashboard`}
+                    {/* Access Code */}
+                    <div className="bg-slate-50 rounded-lg p-3 mb-4">
+                      <p className="text-xs text-slate-500 uppercase tracking-wide font-semibold mb-1">Código de Acesso</p>
+                      <div className="flex items-center gap-2">
+                        <p className="text-sm font-mono font-bold text-indigo-600">{p.codigo_acesso || "N/A"}</p>
+                        <button
                           onClick={(e) => {
                             e.stopPropagation();
-                            setOpenMenuId(null);
+                            navigator.clipboard.writeText(p.codigo_acesso || "");
+                            alert("Código copiado!");
                           }}
-                          className="flex items-center gap-2 w-full px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 border-b border-slate-100 first:rounded-t-lg"
+                          className="p-1.5 hover:bg-indigo-100 rounded transition text-indigo-600 hover:text-indigo-700"
+                          title="Copiar código de acesso"
                         >
-                          <Eye size={16} />
-                          Ver Detalhes
-                        </Link>
-                        <Link 
-                          to={`/psicologo/paciente/${p.id}/configurar`}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setOpenMenuId(null);
-                          }}
-                          className="flex items-center gap-2 w-full px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 border-b border-slate-100"
-                        >
-                          <Settings size={16} />
-                          Configurar Plano
-                        </Link>
-                        <button 
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setOpenMenuId(null);
-                            handleDelete(p.id);
-                          }}
-                          className="flex items-center gap-2 w-full px-4 py-2 text-sm text-red-600 hover:bg-red-50 rounded-b-lg"
-                        >
-                          <Trash2 size={16} />
-                          Remover
+                          <span className="text-sm">📋</span>
                         </button>
                       </div>
-                    )}
+                    </div>
+
+                    {/* Action Button */}
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        navigate(`/psicologo/paciente/${p.id}/dashboard`);
+                      }}
+                      className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2 rounded-lg transition flex items-center justify-center gap-2"
+                    >
+                      <Eye size={16} />
+                      Ver Detalhes
+                    </button>
                   </div>
+
+                  {/* Menu Dropdown */}
+                  {openMenuId === p.id && (
+                    <div className="absolute right-6 top-20 bg-white border border-slate-200 rounded-lg shadow-xl z-20 min-w-48">
+                      <Link 
+                        to={`/psicologo/paciente/${p.id}/dashboard`}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setOpenMenuId(null);
+                        }}
+                        className="flex items-center gap-2 w-full px-4 py-3 text-sm text-slate-700 hover:bg-indigo-50 border-b border-slate-100 first:rounded-t-lg"
+                      >
+                        <Eye size={16} />
+                        Ver Detalhes
+                      </Link>
+                      <button 
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setOpenMenuId(null);
+                          handleDelete(p.id);
+                        }}
+                        className="flex items-center gap-2 w-full px-4 py-3 text-sm text-red-600 hover:bg-red-50 rounded-b-lg"
+                      >
+                        <Trash2 size={16} />
+                        Remover
+                      </button>
+                    </div>
+                  )}
                 </div>
               </div>
             ))}
@@ -1128,6 +1167,8 @@ const PacienteDashboard = () => {
   const [respostas, setRespostas] = useState([]);
   const [resumos, setResumos] = useState([]);
   const [mostraRelatorio, setMostraRelatorio] = useState(false);
+  const [showHistory, setShowHistory] = useState(false);
+  const [expandedResumoId, setExpandedResumoId] = useState(null);
   
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -1229,7 +1270,7 @@ const PacienteDashboard = () => {
   }
 
   // Formatação de data para "X de Mes, YYYY"
-  const formatarDataMesPorExtenso = (dataString) => {
+  function formatarDataMesPorExtenso(dataString) {
     const data = new Date(dataString);
     const formatter = new Intl.DateTimeFormat('pt-BR', {
       year: 'numeric',
@@ -1237,7 +1278,7 @@ const PacienteDashboard = () => {
       day: 'numeric',
     });
     return formatter.format(data).replace(',', ' de').replace(' de ', ' de ');
-  };
+  }
 
   return (
     <div className="min-h-screen bg-slate-50">
@@ -1277,12 +1318,24 @@ const PacienteDashboard = () => {
               </div>
               <div>
                 <p className="text-sm font-semibold text-gray-500 uppercase tracking-wide">Código de Acesso</p>
-                <p className="text-lg text-gray-800 font-mono bg-slate-100 inline-block px-3 py-2 rounded-md mt-1 font-bold">{paciente?.codigo_acesso || "N/A"}</p>
+                <div className="flex items-center gap-2 mt-1">
+                  <p className="text-lg text-gray-800 font-mono bg-slate-100 px-3 py-2 rounded-md font-bold">{paciente?.codigo_acesso || "N/A"}</p>
+                  <button
+                    onClick={() => {
+                      navigator.clipboard.writeText(paciente?.codigo_acesso || "");
+                      alert("Código de acesso copiado!");
+                    }}
+                    className="px-3 py-2 bg-indigo-100 hover:bg-indigo-200 text-indigo-600 rounded-md transition text-sm font-medium flex items-center gap-1"
+                    title="Copiar código de acesso"
+                  >
+                    <span>📋</span> Copiar
+                  </button>
+                </div>
               </div>
               <div>
                 <p className="text-sm font-semibold text-gray-500 uppercase tracking-wide">Plano Atual</p>
                 <p className="text-lg text-gray-800 mt-1">
-                  {paciente?.questionario_nome || "Nenhum"} <span className="text-sm text-gray-500">({paciente?.frequencia || "N/A"})</span>
+              {paciente?.questionario_nome ? getQuestionarioNome(paciente.questionario_nome) : "Nenhum"} <span className="text-sm text-gray-500">({paciente?.frequencia || "N/A"})</span>
                 </p>
               </div>
             </div>
@@ -1298,6 +1351,13 @@ const PacienteDashboard = () => {
               >
                 <FileText className="mr-2 h-4 w-4" />
                 Ver Relatório Semanal
+              </button>
+              <button
+                onClick={() => setShowHistory(true)}
+                className="w-full text-left py-3 px-4 font-medium rounded-lg text-slate-700 bg-white hover:bg-slate-100 transition-colors flex items-center border"
+              >
+                <FileText className="mr-2 h-4 w-4 text-slate-600" />
+                Histórico de Relatórios Semanais
               </button>
               <button 
                 onClick={handleEditarPaciente}
@@ -1326,6 +1386,100 @@ const PacienteDashboard = () => {
 
         {/* Resumos Semanais e Respostas Diárias */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+
+          {/* Modal / Painel de Histórico de Resumos Semanais */}
+          {showHistory && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center">
+              <div className="absolute inset-0 bg-black opacity-40" onClick={() => setShowHistory(false)}></div>
+              <div className="relative w-full max-w-4xl mx-4 bg-white rounded-2xl shadow-xl border border-slate-200 p-6 overflow-y-auto max-h-[80vh]">
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="text-xl font-bold">Histórico de Relatórios Semanais</h2>
+                  <div className="flex items-center gap-2">
+                    <button onClick={() => setShowHistory(false)} className="px-3 py-2 bg-slate-100 rounded hover:bg-slate-200">Fechar</button>
+                  </div>
+                </div>
+
+                <div className="space-y-4">
+                  {resumos && resumos.length > 0 ? (
+                    resumos
+                      .slice()
+                      .sort((a,b) => new Date(b.data_fim_semana || b.data_envio) - new Date(a.data_fim_semana || a.data_envio))
+                      .map(r => {
+                        let analisesQ = r.analises_questionarios;
+                        try { if (typeof analisesQ === 'string' && analisesQ.trim()) analisesQ = JSON.parse(analisesQ); } catch(e) {}
+                        const resumoDate = r.data_fim_semana || r.data_envio || r.data_envio;
+                        return (
+                          <div key={r.id} className="border border-slate-100 rounded-lg p-4">
+                            <div className="flex items-start justify-between">
+                              <div>
+                                <div className="text-sm text-slate-500">Semana encerrada em</div>
+                                <div className="font-semibold text-gray-800">{formatarDataMesPorExtenso(resumoDate)}</div>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <button
+                                  onClick={() => setExpandedResumoId(expandedResumoId === r.id ? null : r.id)}
+                                  className="px-3 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 text-sm"
+                                >
+                                  {expandedResumoId === r.id ? 'Ocultar' : 'Ver Detalhes'}
+                                </button>
+                              </div>
+                            </div>
+
+                            {expandedResumoId === r.id && (
+                              <div className="mt-3 text-sm text-slate-700 space-y-3">
+                                { (r.texto_resumo || r.resumo_semanal?.texto_resumo) && (
+                                  <div>
+                                    <p className="font-medium text-slate-600 mb-1">Resumo da Semana</p>
+                                    <p className="whitespace-pre-line">{r.texto_resumo || r.resumo_semanal?.texto_resumo}</p>
+                                  </div>
+                                )}
+
+                                { (r.texto_expectativa || r.resumo_semanal?.texto_expectativa) && (
+                                  <div>
+                                    <p className="font-medium text-slate-600 mb-1">Expectativa</p>
+                                    <p className="whitespace-pre-line">{r.texto_expectativa || r.resumo_semanal?.texto_expectativa}</p>
+                                  </div>
+                                )}
+
+                                { r.resumo_geral && (
+                                  <div>
+                                    <p className="font-medium text-slate-600 mb-1">Resumo Geral (IA)</p>
+                                    <p className="whitespace-pre-line">{r.resumo_geral}</p>
+                                  </div>
+                                ) }
+
+                                { r.analise_pontos && (
+                                  <div>
+                                    <p className="font-medium text-slate-600 mb-1">Análise e Pontos de Atenção (IA)</p>
+                                    <p className="whitespace-pre-line">{r.analise_pontos}</p>
+                                  </div>
+                                ) }
+
+                                { analisesQ && typeof analisesQ === 'object' && (
+                                  <div>
+                                    <p className="font-medium text-slate-600 mb-2">Análises por Questionário</p>
+                                    <div className="space-y-2">
+                                      {Object.keys(analisesQ).map(k => (
+                                        <div key={k} className="bg-slate-50 p-2 rounded">
+                                          <div className="text-xs text-slate-500">{getQuestionarioNome(k)}</div>
+                                          <div className="text-sm text-slate-800 whitespace-pre-line">{analisesQ[k]}</div>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })
+                  ) : (
+                    <p className="text-sm text-slate-500">Ainda não há resumos semanais para este paciente.</p>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
           
           {/* Resumos Semanais */}
           <div className="bg-white rounded-2xl shadow-lg p-8 border border-slate-200">
@@ -1840,6 +1994,9 @@ const ConfigurarPlanoPaciente = () => {
 const QuestionarioPaciente = () => {
   const { paciente } = useAuth();
   const navigate = useNavigate();
+  // If user clicked 'Refazer' from ResumoPaciente, an override object will be in sessionStorage
+  const overrideRaw = typeof window !== 'undefined' ? sessionStorage.getItem('override_questionario') : null;
+  const overrideObj = overrideRaw ? JSON.parse(overrideRaw) : null;
   const [questionario, setQuestionario] = useState(null);
   const [respostas, setRespostas] = useState({});
   const [isLoading, setIsLoading] = useState(true);
@@ -1985,6 +2142,22 @@ const QuestionarioPaciente = () => {
       
       try {
         console.log('Iniciando busca do questionário...');
+        // Se houver override (refazer), usar o objeto salvo no sessionStorage
+        if (overrideObj) {
+          console.log('🟡 Usando override_questionario:', overrideObj);
+          setQuestionario(overrideObj.questionario);
+          // inicializar respostas vazias
+          const respostasIniciais = {};
+          if (overrideObj.questionario.perguntas && Array.isArray(overrideObj.questionario.perguntas)) {
+            overrideObj.questionario.perguntas.forEach((p, index) => {
+              const perguntaId = typeof p === 'string' ? `q${index}` : (p.id || `q${index}`);
+              respostasIniciais[perguntaId] = null;
+            });
+          }
+          setRespostas(respostasIniciais);
+          setIsLoading(false);
+          return;
+        }
         console.log('testDate:', currentDate);
         
         // Adiciona a data de teste como parâmetro de consulta se estiver no modo teste
@@ -2112,6 +2285,20 @@ const QuestionarioPaciente = () => {
         console.log(`🕐 Frontend (submit): testDate=${testDate.toISOString()} -> dataResposta=${body.dataResposta}`);
       }
 
+      // Se veio de um override (refazer), enviar a data do questionário que foi perdido
+      const overrideRawNow = typeof window !== 'undefined' ? sessionStorage.getItem('override_questionario') : null;
+      if (overrideRawNow) {
+        try {
+          const ov = JSON.parse(overrideRawNow);
+          if (ov && ov.date) {
+            body.dataResposta = ov.date; // YYYY-MM-DD
+            console.log('🚨 Enviando resposta com dataResposta (refazer):', body.dataResposta);
+          }
+        } catch (err) {
+          console.error('Erro ao parsear override_questionario', err);
+        }
+      }
+
       const response = await fetch('/api/questionario/responder', {
         method: 'POST',
         headers: {
@@ -2136,6 +2323,23 @@ const QuestionarioPaciente = () => {
         }, 1500);
       }
       
+      // Se veio de override, remover o override e a entrada de missedQuestionarios correspondente
+      try {
+        const overrideRawNow = typeof window !== 'undefined' ? sessionStorage.getItem('override_questionario') : null;
+        if (overrideRawNow) {
+          const ov = JSON.parse(overrideRawNow);
+          // limpar override
+          sessionStorage.removeItem('override_questionario');
+          // remover do missedQuestionarios
+          const missKey = 'missedQuestionarios';
+          const current = JSON.parse(sessionStorage.getItem(missKey) || '[]');
+          const filtered = current.filter(item => !(item.date === ov.date && item.questionario && ov.questionario && item.questionario.titulo === ov.questionario.titulo));
+          sessionStorage.setItem(missKey, JSON.stringify(filtered));
+        }
+      } catch (err) {
+        console.error('Erro ao limpar override/missedQuestionarios', err);
+      }
+
       setQuestionario(null);
     } catch (err) {
       setError(err.message);
@@ -2249,16 +2453,52 @@ const QuestionarioPaciente = () => {
       {error && !success && !questionario && renderMensagem(error, 'error')}
       {success && renderMensagem(success, 'success')}
       {questionario && !isLoading && !success && (
-        <form onSubmit={handleSubmit} className="space-y-8">
-          <div className="mb-6 p-4 bg-teal-50 border border-teal-200 rounded-lg">
-            <p className="text-sm font-medium text-teal-700 mb-2">📋 Questionário de Hoje:</p>
-            <h2 className="text-xl font-bold text-teal-900">{questionario.titulo || questionario.nome}</h2>
-            {questionario.descricao && <p className="text-gray-600 mt-2">{questionario.descricao}</p>}
+        <div>
+          <div className="flex items-center justify-between mb-4">
+            <p className="text-sm text-gray-600">Se você não puder responder agora, pode pular e voltar depois.</p>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  try {
+                    // salvar na lista de questionários perdidos para permitir refazer depois
+                    const hoje = questionario?.dataConsulta || (new Date()).toISOString().split('T')[0];
+                    const missKey = 'missedQuestionarios';
+                    const current = JSON.parse(sessionStorage.getItem(missKey) || '[]');
+                    // salvar o objeto inteiro do questionário (perguntas/opcoes/titulo) e a data
+                    current.push({ date: hoje, questionario });
+                    sessionStorage.setItem(missKey, JSON.stringify(current));
+                  } catch (err) {
+                    console.error('Erro ao salvar missedQuestionarios', err);
+                  }
+                  navigate('/');
+                }}
+                className="px-3 py-1 text-sm bg-slate-100 rounded hover:bg-slate-200"
+              >
+                Pular por agora
+              </button>
+              <button
+                type="button"
+                onClick={(e) => { e.stopPropagation(); localStorage.removeItem('paciente-token'); window.location.href = '/login-paciente'; }}
+                className="px-3 py-1 text-sm bg-red-50 text-red-600 rounded hover:bg-red-100"
+              >
+                Sair
+              </button>
+            </div>
           </div>
-          {questionario.perguntas && questionario.perguntas.map((p, i) => renderPergunta(p, i))}
-          {error && <p className="text-sm text-red-600 text-center">{error}</p>}
-          <BotaoSubmit label="Enviar Respostas" labelLoading="Enviando..." isLoading={isSubmitting} icon={<FileText />} />
-        </form>
+
+          <form onSubmit={handleSubmit} className="space-y-8">
+            <div className="mb-6 p-4 bg-teal-50 border border-teal-200 rounded-lg">
+              <p className="text-sm font-medium text-teal-700 mb-2">📋 Questionário de Hoje:</p>
+              <h2 className="text-xl font-bold text-teal-900">{questionario.titulo || questionario.nome}</h2>
+              {questionario.descricao && <p className="text-gray-600 mt-2">{questionario.descricao}</p>}
+            </div>
+            {questionario.perguntas && questionario.perguntas.map((p, i) => renderPergunta(p, i))}
+            {error && <p className="text-sm text-red-600 text-center">{error}</p>}
+            <BotaoSubmit label="Enviar Respostas" labelLoading="Enviando..." isLoading={isSubmitting} icon={<FileText />} />
+          </form>
+        </div>
       )}
       {!isLoading && !questionario && !success && error && (
         <div className="p-6 text-center bg-gray-50 rounded-lg">
@@ -2280,6 +2520,8 @@ const ResumoPaciente = () => {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [isDisabled, setIsDisabled] = useState(true);
+  const navigate = useNavigate();
+  const [missed, setMissed] = useState([]);
 
   useEffect(() => {
     const mostrarResumo = sessionStorage.getItem('mostrarResumo');
@@ -2289,6 +2531,12 @@ const ResumoPaciente = () => {
     } else {
       setIsDisabled(true);
       setError('O resumo semanal só pode ser preenchido após completar os 3 questionários da semana.');
+    }
+    try {
+      const m = JSON.parse(sessionStorage.getItem('missedQuestionarios') || '[]');
+      setMissed(m);
+    } catch (err) {
+      setMissed([]);
     }
   }, []);
 
@@ -2340,7 +2588,7 @@ const ResumoPaciente = () => {
         <div>
           <label htmlFor="resumo" className="block text-lg font-medium text-gray-800">Como foi sua semana?</label>
           <p className="text-sm text-gray-500 mb-2">Escreva um breve resumo sobre seus sentimentos, desafios e conquistas.</p>
-          <textarea 
+          <textarea
             id="resumo"
             rows="6"
             value={resumoSemanal}
@@ -2349,6 +2597,33 @@ const ResumoPaciente = () => {
             placeholder="Esta semana eu me senti..."
             disabled={isSubmitting || !!success || isDisabled}
           ></textarea>
+          {isDisabled && missed.length > 0 && (
+            <div className="mt-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+              <p className="font-semibold text-yellow-800 mb-2">Você tem questionários não respondidos:</p>
+              <ul className="space-y-2 text-sm text-yellow-900">
+                {missed.map((m, idx) => (
+                  <li key={idx} className="flex items-center justify-between gap-4">
+                    <div>
+                      <div className="font-medium">{m.questionario?.titulo || m.questionario?.nome || 'Questionário'}</div>
+                      <div className="text-xs text-yellow-800">Data: {m.date}</div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => {
+                          // colocar override e ir para refazer
+                          sessionStorage.setItem('override_questionario', JSON.stringify(m));
+                          navigate('/paciente/questionario');
+                        }}
+                        className="px-3 py-1 bg-yellow-600 text-white rounded text-sm hover:bg-yellow-700"
+                      >
+                        Refazer
+                      </button>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
         </div>
          <div>
           <label htmlFor="expectativa" className="block text-lg font-medium text-gray-800">Expectativa para a próxima semana</label>

@@ -285,10 +285,15 @@ async function chamarGemini(userPrompt, systemPrompt) {
 async function gerarResumoGeral(textoResumo, textoExpectativa, questionariosDados = {}) {
     const systemPrompt = `
         Você é um assistente de psicologia especializado em síntese e análise.
-        Sua tarefa é gerar um RESUMO GERAL DA SEMANA (máximo 2 parágrafos) que responda a:
+        Sua tarefa é gerar um RESUMO GERAL DA SEMANA (máximo 2-3 parágrafos) que responda a:
         - O que o paciente relatou que respondeu/fez durante a semana
         - Quais foram suas expectativas para a próxima semana
         - Contexto geral: dados dos questionários (scores, tendências)
+        
+        IMPORTANTE: 
+        - Estruture em PARÁGRAFOS SEPARADOS (use quebra de linha entre parágrafos)
+        - Cada parágrafo deve ter uma ideia principal clara
+        - Use espaçamento entre ideias para melhor legibilidade
         
         Seja conciso, profissional e empático. Escreva em português do Brasil.
     `;
@@ -300,7 +305,7 @@ async function gerarResumoGeral(textoResumo, textoExpectativa, questionariosDado
 
     userPrompt += `\nResumo do Paciente: "${textoResumo}"\n`;
     userPrompt += `Expectativa do Paciente: "${textoExpectativa}"\n\n`;
-    userPrompt += `Gere um resumo geral da semana com base nesses dados.`;
+    userPrompt += `Gere um resumo geral da semana com base nesses dados. Coloque quebra de linha entre parágrafos para melhor legibilidade.`;
 
     return await chamarGemini(userPrompt, systemPrompt);
 }
@@ -311,12 +316,17 @@ async function gerarResumoGeral(textoResumo, textoExpectativa, questionariosDado
 async function gerarAnaliseEpontos(textoResumo, textoExpectativa, questionariosDados = {}) {
     const systemPrompt = `
         Você é um psicólogo experiente analisando dados de bem-estar mental.
-        Sua tarefa é gerar uma ANÁLISE E PONTOS DE ATENÇÃO (2-3 parágrafos) que incluam:
+        Sua tarefa é gerar uma ANÁLISE E PONTOS DE ATENÇÃO (2-4 parágrafos) que incluam:
         - Correlações entre os scores (ex: depressão + ansiedade + afeto)
         - Tendências observadas (melhora, piora, estabilidade)
         - Congruência entre relato verbal e scores
         - Pontos críticos ou de preocupação
         - Recomendações e sugestões
+        
+        IMPORTANTE:
+        - Estruture em PARÁGRAFOS SEPARADOS (use quebra de linha entre parágrafos)
+        - Cada parágrafo deve abordar um tópico específico
+        - Use espaçamento adequado para melhor legibilidade
         
         Seja analítico, empático e prático. Escreva em português do Brasil como se fosse para orientar o psicólogo.
     `;
@@ -329,7 +339,7 @@ async function gerarAnaliseEpontos(textoResumo, textoExpectativa, questionariosD
 
     userPrompt += `\nResumo do Paciente: "${textoResumo}"\n`;
     userPrompt += `Expectativa: "${textoExpectativa}"\n\n`;
-    userPrompt += `Gere uma análise profunda com pontos de atenção.`;
+    userPrompt += `Gere uma análise profunda com pontos de atenção. Use quebra de linha entre parágrafos.`;
 
     return await chamarGemini(userPrompt, systemPrompt);
 }
@@ -347,6 +357,12 @@ async function gerarAnaliseQuestionario(questionarioTitulo, score, maxScore, sev
         - Significado clínico da severidade
         - Sugestões ou observações relevantes
         
+        IMPORTANTE:
+        - Estruture em PARÁGRAFOS SEPARADOS (use quebra de linha entre parágrafos)
+        - Primeiro parágrafo: análise do score e severidade
+        - Segundo parágrafo: tendência e recomendações
+        - Use espaçamento para melhor legibilidade
+        
         Seja direto, profissional e orientado para ação. Escreva em português do Brasil.
     `;
 
@@ -356,7 +372,7 @@ Severidade: ${severidade}
 Score Médio da Semana: ${scoreMedio}
 Mínimo: ${scoreMinimo}, Máximo: ${scoreMaximo}
 
-Gere uma análise individual detalhada deste questionário.`;
+Gere uma análise individual detalhada deste questionário. Use quebra de linha entre parágrafos.`;
 
     return await chamarGemini(userPrompt, systemPrompt);
 }
