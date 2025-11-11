@@ -802,67 +802,124 @@ const DashboardPsicologo = () => {
     }
   };
 
+  // Função para gerar cor do avatar baseada no nome
+  const getAvatarColor = (nome) => {
+    const colors = ['bg-indigo-100', 'bg-blue-100', 'bg-purple-100', 'bg-pink-100', 'bg-green-100', 'bg-yellow-100', 'bg-orange-100', 'bg-red-100'];
+    const index = nome.charCodeAt(0) % colors.length;
+    return colors[index];
+  };
+
+  const getAvatarTextColor = (nome) => {
+    const colors = ['text-indigo-700', 'text-blue-700', 'text-purple-700', 'text-pink-700', 'text-green-700', 'text-yellow-700', 'text-orange-700', 'text-red-700'];
+    const index = nome.charCodeAt(0) % colors.length;
+    return colors[index];
+  };
+
   if (isLoading) return <div className="text-center p-8"><Spinner /> Carregando pacientes...</div>;
 
   return (
-    <div className="bg-white shadow-lg rounded-lg p-6">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold text-gray-800">Seus Pacientes</h1>
-        <Link
-          to="/psicologo/criar-paciente"
-          className="flex items-center px-4 py-2 bg-teal-600 text-white rounded-md font-semibold shadow-lg hover:bg-teal-700 transition duration-300"
-        >
-          <UserPlus className="mr-2 h-5 w-5" />
-          Adicionar Paciente
-        </Link>
-      </div>
-      
-      {error && <div className="p-3 rounded-md bg-red-100 text-red-800 text-center font-medium mb-4">{error}</div>}
-      
-      {pacientes.length === 0 && !error ? (
-        <p className="text-gray-600">Você ainda não cadastrou nenhum paciente.</p>
-      ) : (
-        <ul className="divide-y divide-gray-200">
-          {pacientes.map((p) => (
-            <li key={p.id} className="py-4 flex flex-col sm:flex-row justify-between items-start sm:items-center">
-              <div className="mb-2 sm:mb-0">
-                <p className="text-lg font-medium text-teal-700">{p.nome}</p>
-                <p className="text-sm text-gray-500">Email: {p.email}</p>
-                <p className="text-sm text-gray-500">Código de Acesso: <span className="font-mono bg-gray-100 p-1 rounded">{p.codigo_acesso}</span></p>
-              </div>
-              <div className="flex space-x-2">
-                <Link 
-                  to={`/psicologo/paciente/${p.id}/dashboard`}
-                  className="flex items-center px-3 py-1.5 bg-white border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-100"
-                >
-                  <FileText className="h-4 w-4" />
-                </Link>
-                <Link 
-                  to={`/psicologo/paciente/${p.id}/configurar`}
-                  className="flex items-center px-3 py-1.5 bg-white border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-100"
-                  title="Configurar Plano"
-                >
-                  <Settings className="h-4 w-4" />
-                </Link>
-                 <Link 
-                  to={`/psicologo/paciente/${p.id}/editar`}
-                  className="flex items-center px-3 py-1.5 bg-white border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-100"
-                  title="Editar"
-                >
-                  <Edit className="h-4 w-4" />
-                </Link>
-                <button 
-                  onClick={() => handleDelete(p.id)}
-                  className="flex items-center px-3 py-1.5 bg-red-100 border border-red-200 rounded-md text-sm font-medium text-red-700 hover:bg-red-200"
-                  title="Eliminar"
-                >
-                  <Trash2 className="h-4 w-4" />
-                </button>
-              </div>
-            </li>
-          ))}
-        </ul>
-      )}
+    <div className="min-h-screen bg-slate-50">
+      {/* Header */}
+      <header className="bg-white shadow-sm sticky top-0 z-10 mb-8">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center h-16">
+            <div className="flex items-center space-x-3">
+              <Brain className="h-8 w-8 text-indigo-600" />
+              <span className="text-xl font-semibold text-gray-800">PsiDados</span>
+            </div>
+            <div className="flex items-center space-x-4">
+              <span className="text-gray-600">Olá, {psicologo?.nome || "Profissional"}</span>
+              <Link to="/" className="text-sm font-medium text-indigo-600 hover:text-indigo-800">Sair</Link>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      {/* Main Content */}
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-12">
+        <div className="flex justify-between items-center mb-8">
+          <h1 className="text-3xl font-bold text-gray-900">Meus Pacientes</h1>
+          <Link
+            to="/psicologo/criar-paciente"
+            className="flex items-center px-4 py-2 bg-indigo-600 text-white rounded-lg font-medium shadow-lg hover:bg-indigo-700 transition-colors"
+          >
+            <UserPlus className="mr-2 h-5 w-5" />
+            Adicionar Paciente
+          </Link>
+        </div>
+        
+        {error && (
+          <div className="mb-6 p-4 rounded-lg bg-red-100 text-red-800 border border-red-200 font-medium">
+            {error}
+          </div>
+        )}
+        
+        {pacientes.length === 0 && !error ? (
+          <div className="bg-white rounded-2xl shadow-lg p-12 text-center border border-slate-200">
+            <Users className="h-16 w-16 text-gray-300 mx-auto mb-4" />
+            <p className="text-gray-500 text-lg">Você ainda não cadastrou nenhum paciente.</p>
+            <p className="text-gray-400 text-sm mt-2">Clique em "Adicionar Paciente" para começar.</p>
+          </div>
+        ) : (
+          <div className="bg-white rounded-2xl shadow-lg border border-slate-200 overflow-hidden">
+            <ul className="divide-y divide-gray-200">
+              {pacientes.map((p) => (
+                <li key={p.id}>
+                  <button 
+                    onClick={() => navigate(`/psicologo/paciente/${p.id}/dashboard`)}
+                    className="w-full p-6 text-left hover:bg-slate-50 transition-colors focus:outline-none"
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-4 flex-1">
+                        {/* Avatar */}
+                        <div className={`flex-shrink-0 h-12 w-12 rounded-full ${getAvatarColor(p.nome)} flex items-center justify-center`}>
+                          <span className={`text-xl font-bold ${getAvatarTextColor(p.nome)}`}>
+                            {p.nome.charAt(0).toUpperCase()}
+                          </span>
+                        </div>
+                        {/* Informações */}
+                        <div className="flex-1">
+                          <p className="text-lg font-semibold text-gray-900">{p.nome}</p>
+                          <p className="text-sm text-gray-500">{p.email}</p>
+                        </div>
+                      </div>
+                      {/* Ações */}
+                      <div className="flex items-center space-x-3 ml-4">
+                        <Link 
+                          to={`/psicologo/paciente/${p.id}/dashboard`}
+                          onClick={(e) => e.stopPropagation()}
+                          className="px-3 py-2 text-sm font-medium text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"
+                          title="Ver Detalhes"
+                        >
+                          Ver Detalhes
+                        </Link>
+                        <Link 
+                          to={`/psicologo/paciente/${p.id}/configurar`}
+                          onClick={(e) => e.stopPropagation()}
+                          className="px-3 py-2 text-sm font-medium text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"
+                          title="Configurar Plano"
+                        >
+                          Configurar
+                        </Link>
+                        <button 
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDelete(p.id);
+                          }}
+                          className="px-3 py-2 text-sm font-medium text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                          title="Eliminar"
+                        >
+                          Eliminar
+                        </button>
+                      </div>
+                    </div>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+      </main>
     </div>
   );
 };
@@ -873,6 +930,7 @@ const PacienteDashboard = () => {
   const { id: pacienteId } = useParams();
   const { psicologo } = useAuth();
   const { isTestMode } = useTestMode();
+  const navigate = useNavigate();
   
   const [paciente, setPaciente] = useState(null);
   const [respostas, setRespostas] = useState([]);
@@ -880,6 +938,7 @@ const PacienteDashboard = () => {
   
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [success, setSuccess] = useState(null);
 
   useEffect(() => {
     if (!pacienteId || !psicologo?.token) return;
@@ -927,6 +986,24 @@ const PacienteDashboard = () => {
     fetchData();
   }, [pacienteId, psicologo.token]);
 
+  const handleEditarPaciente = () => {
+    navigate(`/psicologo/paciente/${pacienteId}/editar`);
+  };
+
+  const handleConfigurarPlano = () => {
+    navigate(`/psicologo/paciente/${pacienteId}/configurar`);
+  };
+
+  const handleDesvincularPaciente = () => {
+    if (window.confirm('Tem certeza que deseja desvincular este paciente? Esta ação é irreversível.')) {
+      // TODO: Implementar desvinculação no backend
+      setSuccess('Paciente desvinculado com sucesso.');
+      setTimeout(() => {
+        navigate('/psicologo/dashboard');
+      }, 1500);
+    }
+  };
+
   if (isLoading) {
     return <div className="text-center p-8"><Spinner /> Carregando dados do paciente...</div>;
   }
@@ -935,58 +1012,164 @@ const PacienteDashboard = () => {
     return <div className="text-center p-8 text-red-600">Erro: {error}</div>;
   }
 
-  return (
-    <div>
-      <Link to="/psicologo/dashboard" className="flex items-center text-teal-600 hover:underline mb-4">
-        <ArrowLeft className="mr-2 h-4 w-4" />
-        Voltar para Dashboard
-      </Link>
-      
-      <h1 className="text-3xl font-bold text-gray-800 mb-2">
-        {paciente?.nome || "Detalhes do Paciente"}
-      </h1>
-      <p className="text-lg text-gray-600 mb-6">
-        Plano Atual: <span className="font-semibold">{paciente?.questionario_nome || "Nenhum"} ({paciente?.frequencia || "N/A"})</span>
-      </p>
+  // Formatação de data para "X de Mes, YYYY"
+  const formatarDataMesPorExtenso = (dataString) => {
+    const data = new Date(dataString);
+    const formatter = new Intl.DateTimeFormat('pt-BR', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+    });
+    return formatter.format(data).replace(',', ' de').replace(' de ', ' de ');
+  };
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-white shadow-lg rounded-lg p-6">
-          <h2 className="text-2xl font-semibold text-gray-700 mb-4">Resumos Semanais (IA)</h2>
-          <div className="space-y-4 max-h-96 overflow-y-auto">
-            {resumos.length === 0 ? (
-              <p className="text-gray-500">Nenhum resumo semanal enviado.</p>
-            ) : (
-              resumos.map(r => (
-                <div key={r.id} className="p-4 border rounded-md bg-gray-50">
-                  <p className="text-sm text-gray-500">{new Date(r.data_envio).toLocaleDateString()}</p>
-                  <p className="mt-2 text-gray-800"><span className="font-semibold">Resumo:</span> {r.resumo_semanal}</p>
-                  <p className="mt-1 text-gray-800"><span className="font-semibold">Expectativa:</span> {r.expectativa_semana}</p>
-                  <div className="mt-3 p-3 bg-teal-50 border border-teal-200 rounded-md">
-                    <p className="font-semibold text-teal-800">Análise (IA):</p>
-                    <p className="text-teal-700 whitespace-pre-wrap">{r.analise_ia || "Aguardando análise..."}</p>
-                  </div>
-                </div>
-              ))
-            )}
-          </div>
-        </div>
-        <div className="bg-white shadow-lg rounded-lg p-6">
-          <h2 className="text-2xl font-semibold text-gray-700 mb-4">Respostas Diárias</h2>
-           <div className="space-y-4 max-h-96 overflow-y-auto">
-            {respostas.length === 0 ? (
-              <p className="text-gray-500">Nenhuma resposta diária enviada.</p>
-            ) : (
-              respostas.map(r => (
-                 <div key={r.id} className="p-4 border rounded-md">
-                   <p className="font-semibold text-gray-700">Questionário: {r.questionario_nome}</p>
-                   <p className="text-sm text-gray-500">{new Date(r.data_resposta).toLocaleDateString()}</p>
-                   <p className="mt-2 text-gray-800">Pontuação Total: {r.pontuacao_total}</p>
-                 </div>
-              ))
-            )}
+  return (
+    <div className="min-h-screen bg-slate-50">
+      {/* Header */}
+      <div className="bg-white shadow-sm sticky top-0 z-10 mb-8">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center h-16">
+            <Link to="/psicologo/dashboard" className="text-indigo-600 hover:text-indigo-800 font-medium flex items-center">
+              <ArrowLeft className="mr-2 h-5 w-5" />
+              Voltar
+            </Link>
+            <h1 className="text-xl font-semibold text-gray-800">PsiDados</h1>
+            <div className="w-24"></div>
           </div>
         </div>
       </div>
+
+      {/* Main Content */}
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-12">
+        {/* Success Message */}
+        {success && (
+          <div className="mb-6 p-4 rounded-lg bg-green-100 text-green-800 border border-green-200">
+            {success}
+          </div>
+        )}
+
+        {/* Título e Informações Básicas */}
+        <div className="mb-8">
+          <h1 className="text-4xl font-bold text-gray-900">Detalhes do Paciente</h1>
+          <p className="mt-2 text-lg text-gray-600">{paciente?.nome || "Carregando..."}</p>
+        </div>
+
+        {/* Grid: Informações + Ações */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
+          
+          {/* Card de Informações - Ocupa 2 colunas */}
+          <div className="md:col-span-2 bg-white rounded-2xl shadow-lg p-8 border border-slate-200">
+            <h2 className="text-2xl font-bold text-gray-900 mb-6">Informações</h2>
+            <div className="space-y-6">
+              <div>
+                <p className="text-sm font-semibold text-gray-500 uppercase tracking-wide">E-mail</p>
+                <p className="text-lg text-gray-800 mt-1">{paciente?.email || "N/A"}</p>
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-gray-500 uppercase tracking-wide">Membro Desde</p>
+                <p className="text-lg text-gray-800 mt-1">{formatarDataMesPorExtenso(paciente?.data_criacao || new Date())}</p>
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-gray-500 uppercase tracking-wide">Código de Acesso</p>
+                <p className="text-lg text-gray-800 font-mono bg-slate-100 inline-block px-3 py-2 rounded-md mt-1 font-bold">{paciente?.codigo_acesso || "N/A"}</p>
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-gray-500 uppercase tracking-wide">Plano Atual</p>
+                <p className="text-lg text-gray-800 mt-1">
+                  {paciente?.questionario_nome || "Nenhum"} <span className="text-sm text-gray-500">({paciente?.frequencia || "N/A"})</span>
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Card de Ações */}
+          <div className="bg-white rounded-2xl shadow-lg p-8 border border-slate-200">
+            <h2 className="text-xl font-bold text-gray-900 mb-4">Ações</h2>
+            <div className="space-y-3">
+              <button 
+                onClick={handleEditarPaciente}
+                className="w-full text-left py-3 px-4 font-medium rounded-lg text-slate-700 bg-slate-100 hover:bg-slate-200 transition-colors flex items-center"
+              >
+                <Edit className="mr-2 h-4 w-4" />
+                Editar Informações
+              </button>
+              <button 
+                onClick={handleConfigurarPlano}
+                className="w-full text-left py-3 px-4 font-medium rounded-lg text-slate-700 bg-slate-100 hover:bg-slate-200 transition-colors flex items-center"
+              >
+                <Settings className="mr-2 h-4 w-4" />
+                Configurar Plano
+              </button>
+              <button 
+                onClick={handleDesvincularPaciente}
+                className="w-full text-left py-3 px-4 font-medium rounded-lg text-red-700 bg-red-100 hover:bg-red-200 transition-colors flex items-center mt-4"
+              >
+                <Trash2 className="mr-2 h-4 w-4" />
+                Desvincular Paciente
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Resumos Semanais e Respostas Diárias */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          
+          {/* Resumos Semanais */}
+          <div className="bg-white rounded-2xl shadow-lg p-8 border border-slate-200">
+            <h2 className="text-2xl font-bold text-gray-900 mb-6">Resumos Semanais (IA)</h2>
+            <div className="space-y-4 max-h-96 overflow-y-auto">
+              {resumos.length === 0 ? (
+                <p className="text-gray-500 text-center py-8">Nenhum resumo semanal enviado.</p>
+              ) : (
+                resumos.map(r => (
+                  <div key={r.id} className="p-4 border-l-4 border-indigo-500 rounded-lg bg-indigo-50">
+                    <p className="text-sm text-gray-500 font-semibold">{new Date(r.data_envio).toLocaleDateString('pt-BR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
+                    <div className="mt-3 space-y-2">
+                      <div>
+                        <p className="text-xs font-bold text-gray-600 uppercase tracking-wide">Resumo da Semana</p>
+                        <p className="text-sm text-gray-800 mt-1 italic">{r.resumo_semanal}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs font-bold text-gray-600 uppercase tracking-wide">Expectativa</p>
+                        <p className="text-sm text-gray-800 mt-1 italic">{r.expectativa_semana}</p>
+                      </div>
+                    </div>
+                    <div className="mt-4 p-3 bg-white border border-indigo-200 rounded-lg">
+                      <p className="font-bold text-indigo-800 text-sm mb-2">💡 Análise (IA):</p>
+                      <p className="text-sm text-indigo-700 leading-relaxed">{r.analise_ia || "Aguardando análise..."}</p>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+
+          {/* Respostas Diárias */}
+          <div className="bg-white rounded-2xl shadow-lg p-8 border border-slate-200">
+            <h2 className="text-2xl font-bold text-gray-900 mb-6">Respostas Diárias</h2>
+            <div className="space-y-4 max-h-96 overflow-y-auto">
+              {respostas.length === 0 ? (
+                <p className="text-gray-500 text-center py-8">Nenhuma resposta diária enviada.</p>
+              ) : (
+                respostas.map(r => (
+                  <div key={r.id} className="p-4 border rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors">
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <p className="font-bold text-gray-900">{r.questionario_nome || "Questionário"}</p>
+                        <p className="text-sm text-gray-500 mt-1">{new Date(r.data_resposta).toLocaleDateString('pt-BR')}</p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-2xl font-bold text-indigo-600">{r.pontuacao_total || 0}</p>
+                        <p className="text-xs text-gray-500">pontos</p>
+                      </div>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+        </div>
+      </main>
     </div>
   );
 };
@@ -1495,8 +1678,12 @@ const QuestionarioPaciente = () => {
       if (response.ok) {
         setSuccess('Questionários reiniciados com sucesso!');
         setError('');
+        // Limpar flags do sessionStorage relacionadas ao resumo
+        sessionStorage.removeItem('mostrarResumo');
         // Recarregar o questionário
-        window.location.reload();
+        setTimeout(() => {
+          window.location.reload();
+        }, 1000);
       } else {
         const data = await response.json();
         setError(data.message || 'Erro ao reiniciar questionários');

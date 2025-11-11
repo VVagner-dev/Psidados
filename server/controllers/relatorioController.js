@@ -38,18 +38,29 @@ const METRICAS_QUESTIONARIOS = {
 
 /**
  * Calcula a pontuação de um questionário baseado nas respostas
+ * Aceita tanto arrays [0,1,2] quanto objetos {q0: 0, q1: 1, ...}
  */
 function calcularPontuacao(questionarioKey, respostas) {
-  if (!Array.isArray(respostas) || respostas.length === 0) {
+  // Converter para array se for objeto
+  let respostasArray = respostas;
+  
+  if (typeof respostas === 'object' && !Array.isArray(respostas)) {
+    // É um objeto {q0: 0, q1: 1, ...}
+    respostasArray = Object.values(respostas);
+  }
+  
+  if (!Array.isArray(respostasArray) || respostasArray.length === 0) {
+    console.log(`⚠️ [calcularPontuacao] Respostas inválidas para ${questionarioKey}:`, respostas);
     return null;
   }
   
   // Soma todas as respostas (valores numéricos)
-  const score = respostas.reduce((sum, resp) => {
+  const score = respostasArray.reduce((sum, resp) => {
     const valor = parseInt(resp);
     return sum + (isNaN(valor) ? 0 : valor);
   }, 0);
   
+  console.log(`✅ [calcularPontuacao] ${questionarioKey}: score = ${score} (respostas: ${JSON.stringify(respostasArray)})`);
   return score;
 }
 
@@ -123,16 +134,53 @@ const obterRelatorioSemanal = async (req, res) => {
     
     // Processar respostas
     respostas.forEach(resposta => {
-      // Tentar identificar qual questionário baseado no padrão de respostas
-      if (Array.isArray(resposta.respostas)) {
-        const numRespostas = resposta.respostas.length;
+      // Extrair questionarioId e respostas do JSON
+      let questionarioId = null;
+      let respostasArray = [];
+      
+      if (typeof resposta.respostas === 'string') {
+        try {
+          const parsed = JSON.parse(resposta.respostas);
+          if (parsed.questionarioId && parsed.respostas) {
+            questionarioId = parsed.questionarioId;
+            respostasArray = parsed.respostas;
+          } else if (Array.isArray(parsed)) {
+            respostasArray = parsed;
+          } else if (typeof parsed === 'object') {
+            // É um objeto {q0: 0, q1: 1, ...}
+            respostasArray = parsed;
+          }
+        } catch (e) {
+          console.log(`⚠️ [obterRelatorioSemanal] Erro ao fazer parse: ${e.message}`);
+          respostasArray = Array.isArray(resposta.respostas) ? resposta.respostas : [];
+        }
+      } else if (typeof resposta.respostas === 'object' && resposta.respostas !== null) {
+        if (resposta.respostas.questionarioId && resposta.respostas.respostas) {
+          questionarioId = resposta.respostas.questionarioId;
+          respostasArray = resposta.respostas.respostas;
+        } else if (Array.isArray(resposta.respostas)) {
+          respostasArray = resposta.respostas;
+        } else {
+          // É um objeto {q0: 0, q1: 1, ...}
+          respostasArray = resposta.respostas;
+        }
+      }
+      
+      // Se temos questionarioId, usar ele; senão, tentar identificar pela quantidade de respostas
+      if (questionarioId && scoresPorQuestionario[questionarioId]) {
+        console.log(`✅ [obterRelatorioSemanal] ${questionarioId} encontrado com respostasArray:`, respostasArray);
+        scoresPorQuestionario[questionarioId].push(respostasArray);
+      } else if (respostasArray && (Array.isArray(respostasArray) || typeof respostasArray === 'object')) {
+        // Tentar identificar pelo número de respostas
+        const numRespostas = Array.isArray(respostasArray) ? respostasArray.length : Object.keys(respostasArray).length;
+        console.log(`🔍 [obterRelatorioSemanal] Identificando por número de respostas: ${numRespostas}`);
         
         if (numRespostas === 9) {
-          scoresPorQuestionario['questionario1']?.push(resposta.respostas);
+          scoresPorQuestionario['questionario1']?.push(respostasArray);
         } else if (numRespostas === 7) {
-          scoresPorQuestionario['questionario2']?.push(resposta.respostas);
+          scoresPorQuestionario['questionario2']?.push(respostasArray);
         } else if (numRespostas === 20) {
-          scoresPorQuestionario['questionario3']?.push(resposta.respostas);
+          scoresPorQuestionario['questionario3']?.push(respostasArray);
         }
       }
     });
@@ -144,11 +192,21 @@ const obterRelatorioSemanal = async (req, res) => {
       questionarios: []
     };
     
+    console.log(`📊 [obterRelatorioSemanal] Processando ${Object.entries(scoresPorQuestionario).length} questionários`);
+    
     for (const [qKey, respostasArray] of Object.entries(scoresPorQuestionario)) {
-      if (respostasArray.length === 0) continue;
+      if (respostasArray.length === 0) {
+        console.log(`⏭️ [obterRelatorioSemanal] ${qKey}: nenhuma resposta`);
+        continue;
+      }
+      
+      console.log(`✅ [obterRelatorioSemanal] ${qKey}: ${respostasArray.length} resposta(s)`);
       
       const metricas = METRICAS_QUESTIONARIOS[qKey];
-      if (!metricas) continue;
+      if (!metricas) {
+        console.log(`❌ [obterRelatorioSemanal] ${qKey}: métrica não encontrada`);
+        continue;
+      }
       
       // Calcular score médio
       const scores = respostasArray.map(r => calcularPontuacao(qKey, r)).filter(s => s !== null);

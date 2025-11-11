@@ -398,9 +398,17 @@ const salvarRespostaDiaria = async (req, res) => {
             RETURNING *;
         `;
 
+        // Guardar questionarioId junto com as respostas para identificação posterior
+        const respostasComQuestionario = {
+            questionarioId: req.body.questionarioId || null,
+            respostas: respostas
+        };
+
+        console.log(`📦 [salvarRespostaDiaria] Salvando: questionarioId=${respostasComQuestionario.questionarioId}, respostas=${JSON.stringify(respostasComQuestionario.respostas)}`);
+
         const values = [
             pacienteId,
-            JSON.stringify(respostas),
+            JSON.stringify(respostasComQuestionario),
             isTestMode && dataResposta ? dataResposta : new Date()
         ];
         const result = await db.query(query, values);
@@ -468,18 +476,53 @@ const reiniciarQuestionarios = async (req, res) => {
     }
 };
 
+/**
+ * @route   GET /api/questionario/debug
+ * @desc    (DEBUG) Retorna todas as respostas do paciente para debug
+ * @access  Privado (Paciente)
+ */
+const debugRespostas = async (req, res) => {
+    try {
+        const pacienteId = req.paciente.id;
+        
+        const query = `
+            SELECT id, paciente_id, data_resposta, respostas 
+            FROM respostas_diarias 
+            WHERE paciente_id = $1 
+            ORDER BY data_resposta DESC;
+        `;
+        const result = await db.query(query, [pacienteId]);
+        
+        console.log(`🔍 DEBUG: Paciente ${pacienteId} tem ${result.rows.length} respostas salvas`);
+        result.rows.forEach((row, idx) => {
+            console.log(`  ${idx + 1}. ID: ${row.id}, Data: ${row.data_resposta}, Respostas: ${JSON.stringify(row.respostas)}`);
+        });
+        
+        res.status(200).json({
+            pacienteId,
+            totalRespostas: result.rows.length,
+            respostas: result.rows
+        });
+    } catch (error) {
+        console.error("Erro ao buscar debug de respostas:", error);
+        res.status(500).json({ message: "Erro interno no servidor." });
+    }
+};
+
 // EXPORTAÇÃO com LOG DE DEBUG
 console.log('🔍 [questionarioController.js] Verificando funções antes de exportar:');
 console.log('   definirQuestionario:', typeof definirQuestionario);
 console.log('   buscarQuestionarioDoDia:', typeof buscarQuestionarioDoDia);
 console.log('   salvarRespostaDiaria:', typeof salvarRespostaDiaria);
 console.log('   reiniciarQuestionarios:', typeof reiniciarQuestionarios);
+console.log('   debugRespostas:', typeof debugRespostas);
 
 module.exports = {
     definirQuestionario,
     buscarQuestionarioDoDia,
     salvarRespostaDiaria,
-    reiniciarQuestionarios
+    reiniciarQuestionarios,
+    debugRespostas
 };
 
 console.log('✅ [questionarioController.js] Funções exportadas com sucesso!');

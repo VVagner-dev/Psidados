@@ -6,7 +6,8 @@ const { protegerPaciente } = require('../middleware/pacienteAuthMiddleware');
 const { 
     buscarQuestionarioDoDia,
     salvarRespostaDiaria,
-    reiniciarQuestionarios
+    reiniciarQuestionarios,
+    debugRespostas
 } = require('../controllers/questionarioController');
 
 // Log de debug
@@ -14,6 +15,7 @@ console.log('🔍 [questionarioRoutes.js] Verificando funções importadas:');
 console.log('   buscarQuestionarioDoDia:', typeof buscarQuestionarioDoDia);
 console.log('   salvarRespostaDiaria:', typeof salvarRespostaDiaria);
 console.log('   reiniciarQuestionarios:', typeof reiniciarQuestionarios);
+console.log('   debugRespostas:', typeof debugRespostas);
 
 // Aplicar o middleware de proteção do PACIENTE a todas as rotas abaixo
 router.use(protegerPaciente);
@@ -30,6 +32,10 @@ router.post('/responder', salvarRespostaDiaria);
 // 3. Rota para reiniciar questionários (modo teste)
 // POST /api/questionario/reiniciar
 router.post('/reiniciar', reiniciarQuestionarios);
+
+// 4. Rota DEBUG - listar todas as respostas do paciente
+// GET /api/questionario/debug
+router.get('/debug', debugRespostas);
 
 console.log('✅ [questionarioRoutes.js] Rotas registradas com sucesso!'); 
 
