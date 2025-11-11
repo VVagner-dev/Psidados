@@ -153,6 +153,11 @@ export default function RelatorioSemanal({ pacienteId, token, onVoltar }) {
     severidade: q.severidade
   }));
 
+  // Adicionar cor aos questionários para usar na legenda
+  relatorio.questionarios.forEach((q, idx) => {
+    q.cor = CORES_PIE[idx % CORES_PIE.length];
+  });
+
   return (
     <div className="min-h-screen bg-slate-50">
       {/* Header */}
@@ -202,7 +207,7 @@ export default function RelatorioSemanal({ pacienteId, token, onVoltar }) {
               </div>
               <h2 className="font-bold text-slate-900">Scores da Semana</h2>
             </div>
-            <div className="w-full h-56 flex items-center justify-center">
+            <div className="w-full h-80 flex items-center justify-center">
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
                   <Pie
@@ -211,7 +216,7 @@ export default function RelatorioSemanal({ pacienteId, token, onVoltar }) {
                     cy="50%"
                     labelLine={false}
                     label={({ name, value, max }) => `${name}: ${value}/${max}`}
-                    outerRadius={70}
+                    outerRadius={100}
                     fill="#8884d8"
                     dataKey="value"
                   >
