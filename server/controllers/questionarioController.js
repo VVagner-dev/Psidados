@@ -219,11 +219,13 @@ const buscarQuestionarioDoDia = async (req, res) => {
         // Se estiver em modo de teste e uma data foi fornecida, use-a
         if (isTestMode && req.query.test_date) {
             // IMPORTANTE: req.query.test_date vem como "YYYY-MM-DD" em Brasil timezone
-            // Não usar new Date() diretamente, pois parsearia como UTC
+            // Criar um Date que represente meia-noite em São Paulo nessa data
+            // Estratégia: criar UTC e depois ajustar para diferença horária
             const [ano, mes, dia] = req.query.test_date.split('-');
-            // Criar Data interpretando como Brasil (sem UTC)
-            dataConsulta = new Date(ano, parseInt(mes) - 1, dia);
-            console.log(`🕐 [buscarQuestionarioDoDia] Teste: Parse date "${req.query.test_date}" -> ${dataConsulta.toISOString()}`);
+            // Meia-noite em São Paulo = 3 horas depois em UTC (GMT-3)
+            // Então criamos um Date UTC que quando interpretado como Brasil dá essa data
+            dataConsulta = new Date(Date.UTC(ano, parseInt(mes) - 1, dia, 3, 0, 0));
+            console.log(`🕐 [buscarQuestionarioDoDia] Teste: Parse date "${req.query.test_date}" -> ${dataConsulta.toISOString()} (meia-noite em SP)`);
         }
 
         const diaDaSemana = getDayOfWeek(dataConsulta);
@@ -318,10 +320,11 @@ const salvarRespostaDiaria = async (req, res) => {
         if (isTestMode && dataResposta) {
             // dataResposta vem como "YYYY-MM-DD" em Brasil timezone
             dataParaVerificacao = dataResposta;
-            // Parse correto: separar em partes e criar Date sem UTC
+            // Criar um Date que represente meia-noite em São Paulo nessa data
             const [ano, mes, dia] = dataResposta.split('-');
-            dataConsulta = new Date(ano, parseInt(mes) - 1, dia);
-            console.log(`🕐 [salvarRespostaDiaria] Teste: Parse date "${dataResposta}" -> ${dataConsulta.toISOString()}`);
+            // Meia-noite em São Paulo = 3 horas depois em UTC (GMT-3)
+            dataConsulta = new Date(Date.UTC(ano, parseInt(mes) - 1, dia, 3, 0, 0));
+            console.log(`🕐 [salvarRespostaDiaria] Teste: Parse date "${dataResposta}" -> ${dataConsulta.toISOString()} (meia-noite em SP)`);
         }
 
         // Determinar o dia da semana da data

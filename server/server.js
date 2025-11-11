@@ -19,6 +19,7 @@ const pacienteRoutes = require('./routes/pacienteRoutes');
 const pacienteAuthRoutes = require('./routes/pacienteAuthRoutes');
 const questionarioRoutes = require('./routes/questionarioRoutes');
 const resumoRoutes = require('./routes/resumoRoutes'); // <-- ADICIONADO PARA A IA
+const relatorioRoutes = require('./routes/relatorioRoutes'); // <-- RELATÓRIO COM GRÁFICO E IA
 
 // --- Configuração Inicial ---
 const app = express();
@@ -52,6 +53,7 @@ app.use('/api/pacientes', pacienteRoutes); // CRUD de Pacientes (Psicólogo)
 app.use('/api/paciente-auth', pacienteAuthRoutes); // Login (Paciente)
 app.use('/api/questionario', questionarioRoutes); // Buscar/Responder Questionário (Paciente)
 app.use('/api/resumo', resumoRoutes); // <-- ADICIONADO PARA A IA (Linha 42)
+app.use('/api/relatorio', relatorioRoutes); // <-- RELATÓRIO COM PONTUAÇÕES E GRÁFICOS
 
 // --- Rota "Raiz" (Teste) ---
 app.get('/', (req, res) => {

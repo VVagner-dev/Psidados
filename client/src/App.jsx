@@ -1626,16 +1626,11 @@ const QuestionarioPaciente = () => {
 
         if (response.ok) {
           // Status 200 - pode ser sucesso ou "sem questionário"
-          if (data.temQuestionarioHoje === false) {
-            // Sem questionário para hoje
-            if (data.message === 'Você já enviou a sua resposta de hoje.') {
-              setSuccess('Você já respondeu o questionário de hoje. Volte amanhã!');
-            } else {
-              setError(data.message || 'Nenhum questionário para hoje.');
-            }
-          } else if (data.temQuestionarioHoje === true) {
+          if (data.temQuestionarioHoje === true) {
             // Tem questionário para hoje
             setQuestionario(data);
+            setError('');
+            setSuccess('');
             const respostasIniciais = {};
             if (data.perguntas && Array.isArray(data.perguntas)) {
                data.perguntas.forEach((p, index) => {
@@ -1644,6 +1639,17 @@ const QuestionarioPaciente = () => {
                });
             }
             setRespostas(respostasIniciais);
+          } else {
+            // Sem questionário para hoje (temQuestionarioHoje === false ou undefined)
+            setQuestionario(null);
+            setRespostas({});
+            if (data.message === 'Você já enviou a sua resposta de hoje.') {
+              setSuccess('Você já respondeu o questionário de hoje. Volte amanhã!');
+              setError('');
+            } else {
+              setError(data.message || 'Nenhum questionário para hoje.');
+              setSuccess('');
+            }
           }
         } else {
           console.error('Erro na resposta:', response.status, data);
