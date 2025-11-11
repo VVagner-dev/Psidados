@@ -1225,20 +1225,6 @@ const PacienteDashboard = () => {
 
   return (
     <div className="min-h-screen bg-slate-50">
-      {/* Header */}
-      <div className="bg-white shadow-sm sticky top-0 z-10 mb-8">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <Link to="/psicologo/dashboard" className="text-indigo-600 hover:text-indigo-800 font-medium flex items-center">
-              <ArrowLeft className="mr-2 h-5 w-5" />
-              Voltar
-            </Link>
-            <h1 className="text-xl font-semibold text-gray-800">PsiDados</h1>
-            <div className="w-24"></div>
-          </div>
-        </div>
-      </div>
-
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-12">
         {/* Success Message */}
@@ -1250,6 +1236,10 @@ const PacienteDashboard = () => {
 
         {/* Título e Informações Básicas */}
         <div className="mb-8">
+          <Link to="/psicologo/dashboard" className="text-indigo-600 hover:text-indigo-800 font-medium flex items-center mb-4">
+            <ArrowLeft className="mr-2 h-5 w-5" />
+            Voltar
+          </Link>
           <h1 className="text-4xl font-bold text-gray-900">Detalhes do Paciente</h1>
           <p className="mt-2 text-lg text-gray-600">{paciente?.nome || "Carregando..."}</p>
         </div>
