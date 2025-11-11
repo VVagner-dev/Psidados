@@ -1443,6 +1443,7 @@ const ConfigurarPlanoPaciente = () => {
 // ( /paciente/questionario )
 const QuestionarioPaciente = () => {
   const { paciente } = useAuth();
+  const navigate = useNavigate();
   const [questionario, setQuestionario] = useState(null);
   const [respostas, setRespostas] = useState({});
   const [isLoading, setIsLoading] = useState(true);
@@ -1724,8 +1725,15 @@ const QuestionarioPaciente = () => {
   if (!response.ok) throw new Error(data.message || 'Erro ao enviar respostas.');
       setSuccess('Obrigado! Suas respostas foram enviadas com sucesso.');
       
+      console.log('🎯 Resposta do servidor:', data);
+      console.log('📊 resumoNecessario:', data.resumoNecessario);
+      
       if (data.resumoNecessario) {
+        console.log('✅ Navegando para resumo...');
         sessionStorage.setItem('mostrarResumo', 'true');
+        setTimeout(() => {
+          navigate('/paciente/resumo');
+        }, 1500);
       }
       
       setQuestionario(null);
@@ -1877,7 +1885,7 @@ const ResumoPaciente = () => {
     const mostrarResumo = sessionStorage.getItem('mostrarResumo');
     if (mostrarResumo === 'true') {
       setIsDisabled(false);
-      sessionStorage.removeItem('mostrarResumo');
+      setError('');
     } else {
       setIsDisabled(true);
       setError('O resumo semanal só pode ser preenchido após completar os 3 questionários da semana.');

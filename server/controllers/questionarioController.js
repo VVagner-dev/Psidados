@@ -267,8 +267,8 @@ const buscarQuestionarioDoDia = async (req, res) => {
         // Verificar se o paciente já respondeu no dia em questão
         const queryJaRespondeu = `SELECT * FROM respostas_diarias WHERE paciente_id = $1 AND data_resposta::date = $2;`;
         const respostaHoje = await db.query(queryJaRespondeu, [pacienteId, dataConsulta.toISOString().split('T')[0]]);
-        if (respostaHoje.rows.length > 0 && !isTestMode) {
-            console.log(`⚠️ [buscarQuestionarioDoDia] Paciente ${pacienteId} já respondeu hoje`);
+        if (respostaHoje.rows.length > 0) {
+            console.log(`⚠️ [buscarQuestionarioDoDia] Paciente ${pacienteId} já respondeu neste dia`);
             return res.status(200).json({ temQuestionarioHoje: false, message: 'Você já enviou a sua resposta de hoje.' });
         }
 
@@ -415,17 +415,23 @@ const salvarRespostaDiaria = async (req, res) => {
             else if (cfg.frequencia_dias && Array.isArray(cfg.frequencia_dias)) numeroQuestionariosSemana = cfg.frequencia_dias.length;
         }
 
-        // Contar respostas do paciente na mesma semana (usamos week number + year para agrupar)
+        // Contar respostas do paciente na mesma semana
+        // Se está em modo teste, usar a data específica para calcular a semana
+        let dataParaSemana = isTestMode && dataParaVerificacao ? new Date(dataParaVerificacao) : new Date();
+        const dataSemanaStr = dataParaSemana.toISOString().split('T')[0];
+        
         const countQuery = `
             SELECT COUNT(*) FROM respostas_diarias
             WHERE paciente_id = $1
-              AND date_part('week', data_resposta) = date_part('week', CURRENT_DATE)
-              AND date_part('year', data_resposta) = date_part('year', CURRENT_DATE)
+              AND date_part('week', data_resposta) = date_part('week', $2::date)
+              AND date_part('year', data_resposta) = date_part('year', $2::date)
         `;
-        const countRes = await db.query(countQuery, [pacienteId]);
+        const countRes = await db.query(countQuery, [pacienteId, dataSemanaStr]);
         const respostasEstaSemana = Number(countRes.rows[0].count || 0);
 
         const resumoNecessario = respostasEstaSemana === numeroQuestionariosSemana;
+        
+        console.log(`📊 [salvarRespostaDiaria] Respostas da semana: ${respostasEstaSemana}/${numeroQuestionariosSemana}, resumoNecessario: ${resumoNecessario}`);
 
         res.status(201).json({
             message: 'Resposta enviada com sucesso!',
