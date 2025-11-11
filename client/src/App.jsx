@@ -7,11 +7,12 @@ import {
   Users, LogIn, LogOut, FileText, 
   ChevronRight, Brain, User, KeyRound, ArrowLeft, 
   Settings, Trash2, Edit, UserPlus, Save,
-  BugPlay, AlertCircle
+  BugPlay, AlertCircle, BarChart3, TrendingUp
 } from 'lucide-react';
 import TestPanel from './components/TestPanel';
 import { useTestMode } from './contexts/TestModeContext';
 import RelatorioSemanal from './components/RelatorioSemanal';
+import { Card, CardHeader, CardBody, Button, Badge, Alert, PageHeader, SectionHeader, LoadingSpinner } from './components/UIComponents';
 
 // --- AUTENTICAÇÃO ---
 

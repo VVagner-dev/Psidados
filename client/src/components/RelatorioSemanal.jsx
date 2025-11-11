@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, BarChart, Bar } from 'recharts';
-import { Download, Loader, FileDown, ArrowLeft } from 'lucide-react';
+import { Download, Loader, FileDown, ArrowLeft, TrendingUp, AlertTriangle, CheckCircle2, Info, FileText } from 'lucide-react';
 import html2pdf from 'html2pdf.js';
 
 const CORES_PIE = ['#ef4444', '#f59e0b', '#3b82f6', '#10b981', '#8b5cf6'];
@@ -104,10 +104,10 @@ export default function RelatorioSemanal({ pacienteId, token, onVoltar }) {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-96">
+      <div className="flex items-center justify-center h-screen bg-gradient-to-br from-slate-50 to-slate-100">
         <div className="text-center">
-          <Loader className="animate-spin mx-auto mb-4" size={40} />
-          <p className="text-gray-600">Carregando relatório...</p>
+          <Loader className="animate-spin mx-auto mb-4 text-indigo-600" size={48} />
+          <p className="text-slate-600 font-semibold">Carregando relatório...</p>
         </div>
       </div>
     );
@@ -115,23 +115,31 @@ export default function RelatorioSemanal({ pacienteId, token, onVoltar }) {
 
   if (erro) {
     return (
-      <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-4">
-        <p className="text-red-700">{erro}</p>
-        <button
-          onClick={carregarRelatorio}
-          className="mt-3 px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
-        >
-          Tentar Novamente
-        </button>
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-6 flex items-center justify-center">
+        <div className="max-w-md w-full">
+          <div className="bg-red-50 border-2 border-red-200 rounded-xl p-6 text-center">
+            <AlertTriangle className="mx-auto mb-4 text-red-600" size={40} />
+            <p className="text-red-700 font-semibold mb-4">{erro}</p>
+            <button
+              onClick={carregarRelatorio}
+              className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition"
+            >
+              Tentar Novamente
+            </button>
+          </div>
+        </div>
       </div>
     );
   }
 
   if (!relatorio) {
     return (
-      <div className="text-center py-12">
-        <p className="text-gray-600 mb-4">Nenhum dado de relatório disponível</p>
-        <p className="text-sm text-gray-500">Responda questionários para gerar relatório</p>
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-6 flex items-center justify-center">
+        <div className="text-center">
+          <Info className="mx-auto mb-4 text-slate-400" size={40} />
+          <p className="text-slate-600 mb-4 font-semibold">Nenhum dado de relatório disponível</p>
+          <p className="text-sm text-slate-500">Responda questionários para gerar relatório</p>
+        </div>
       </div>
     );
   }
@@ -146,26 +154,31 @@ export default function RelatorioSemanal({ pacienteId, token, onVoltar }) {
   }));
 
   return (
-    <div className="min-h-screen bg-slate-50">
-      {/* Cabeçalho */}
-      <div className="bg-gradient-to-r from-indigo-600 to-indigo-700 text-white p-6 shadow-lg sticky top-0 z-20">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
+      {/* Cabeçalho Premium */}
+      <div className="bg-gradient-to-r from-indigo-600 via-indigo-700 to-purple-700 text-white p-6 shadow-2xl sticky top-0 z-50">
         <div className="max-w-7xl mx-auto flex justify-between items-center">
-          <div>
-            <h1 className="text-3xl font-bold mb-1">📋 Relatório Semanal</h1>
-            <p className="text-indigo-100">Análise de bem-estar e saúde mental</p>
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-white/20 rounded-lg backdrop-blur">
+              <FileText size={28} />
+            </div>
+            <div>
+              <h1 className="text-3xl font-bold">📋 Relatório Semanal</h1>
+              <p className="text-indigo-100 text-sm">Análise completa de bem-estar</p>
+            </div>
           </div>
-          <div className="flex gap-3">
+          <div className="flex gap-2">
             <button
               onClick={exportarPDF}
-              className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 flex items-center gap-2 font-medium transition"
+              className="px-4 py-2 bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg flex items-center gap-2 font-semibold transition shadow-lg"
             >
               <FileDown size={18} />
-              Baixar PDF
+              PDF
             </button>
             {onVoltar && (
               <button
                 onClick={onVoltar}
-                className="px-4 py-2 bg-indigo-500 text-white rounded-lg hover:bg-indigo-600 flex items-center gap-2 font-medium transition"
+                className="px-4 py-2 bg-white/20 hover:bg-white/30 text-white rounded-lg flex items-center gap-2 font-semibold transition backdrop-blur"
               >
                 <ArrowLeft size={18} />
                 Voltar
@@ -179,11 +192,16 @@ export default function RelatorioSemanal({ pacienteId, token, onVoltar }) {
       <div ref={relatorioRef} className="max-w-7xl mx-auto p-6 space-y-8">
         
         {/* Seção 1: Gráfico Pizza + Resumo Semanal */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 animate-fadeInUp">
           
           {/* Gráfico Pizza */}
-          <div className="bg-white rounded-2xl shadow-lg p-8 border border-slate-200">
-            <h2 className="text-2xl font-bold text-gray-800 mb-6">📊 Scores da Semana</h2>
+          <div className="bg-white rounded-2xl shadow-xl border border-slate-200 p-8 hover:shadow-2xl transition">
+            <div className="flex items-center gap-2 mb-6">
+              <div className="p-2 bg-indigo-100 rounded-lg">
+                <TrendingUp className="text-indigo-600" size={20} />
+              </div>
+              <h2 className="text-2xl font-bold text-slate-900">Scores da Semana</h2>
+            </div>
             <div className="w-full h-64 flex items-center justify-center">
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
@@ -206,20 +224,28 @@ export default function RelatorioSemanal({ pacienteId, token, onVoltar }) {
                       `${value}/${props.payload.max}`,
                       props.payload.name
                     ]}
-                    contentStyle={{ backgroundColor: '#f9fafb', border: '1px solid #e5e7eb', borderRadius: '8px' }}
+                    contentStyle={{ 
+                      backgroundColor: '#f9fafb', 
+                      border: '2px solid #e5e7eb', 
+                      borderRadius: '12px',
+                      boxShadow: '0 10px 25px rgba(0,0,0,0.1)'
+                    }}
                   />
                 </PieChart>
               </ResponsiveContainer>
             </div>
             
             {/* Legenda dos Scores */}
-            <div className="mt-6 space-y-2">
+            <div className="mt-8 space-y-3">
               {relatorio.questionarios.map((q, idx) => (
-                <div key={idx} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border-l-4" style={{ borderColor: q.cor }}>
-                  <span className="font-semibold text-gray-700">{q.titulo.split('(')[0].trim()}</span>
+                <div key={idx} className="flex items-center justify-between p-4 bg-gradient-to-r from-slate-50 to-slate-100 rounded-lg border-l-4 hover:shadow-md transition" style={{ borderColor: q.cor }}>
+                  <div className="flex items-center gap-3 flex-1">
+                    <div className="w-4 h-4 rounded-full" style={{ backgroundColor: q.cor }}></div>
+                    <span className="font-semibold text-slate-800">{q.titulo.split('(')[0].trim()}</span>
+                  </div>
                   <div className="text-right">
-                    <p className="text-xl font-bold" style={{ color: q.cor }}>{q.score_atual}/{q.max_possivel}</p>
-                    <p className="text-xs text-gray-600">{q.severidade}</p>
+                    <p className="text-2xl font-bold" style={{ color: q.cor }}>{q.score_atual}/{q.max_possivel}</p>
+                    <p className="text-xs font-medium text-slate-500">{q.percentual}%</p>
                   </div>
                 </div>
               ))}
@@ -228,29 +254,38 @@ export default function RelatorioSemanal({ pacienteId, token, onVoltar }) {
 
           {/* Resumo Semanal */}
           {relatorio.resumo_semanal && (
-            <div className="bg-gradient-to-br from-blue-50 to-cyan-50 rounded-2xl shadow-lg p-8 border-2 border-blue-200">
-              <h2 className="text-2xl font-bold text-blue-900 mb-6">📝 Resumo da Semana</h2>
+            <div className="bg-gradient-to-br from-blue-50 to-cyan-50 rounded-2xl shadow-xl border-2 border-blue-200 p-8 hover:shadow-2xl transition">
+              <div className="flex items-center gap-2 mb-6">
+                <div className="p-2 bg-blue-100 rounded-lg">
+                  <CheckCircle2 className="text-blue-600" size={20} />
+                </div>
+                <h2 className="text-2xl font-bold text-blue-900">Resumo da Semana</h2>
+              </div>
               
               <div className="space-y-6">
                 {/* Resumo */}
                 <div>
-                  <h3 className="font-bold text-blue-800 mb-3">Como foi sua semana?</h3>
-                  <div className="bg-white p-4 rounded-lg border-l-4 border-blue-400 text-gray-700 leading-relaxed">
+                  <h3 className="font-bold text-blue-800 mb-3 flex items-center gap-2">
+                    <span className="text-lg">📝</span> Como foi sua semana?
+                  </h3>
+                  <div className="bg-white p-5 rounded-xl border-l-4 border-blue-400 text-slate-700 leading-relaxed shadow-sm">
                     {relatorio.resumo_semanal.texto_resumo}
                   </div>
                 </div>
 
                 {/* Expectativa */}
                 <div>
-                  <h3 className="font-bold text-blue-800 mb-3">Expectativas para próxima semana</h3>
-                  <div className="bg-white p-4 rounded-lg border-l-4 border-blue-400 text-gray-700 leading-relaxed">
+                  <h3 className="font-bold text-blue-800 mb-3 flex items-center gap-2">
+                    <span className="text-lg">🎯</span> Expectativas para próxima semana
+                  </h3>
+                  <div className="bg-white p-5 rounded-xl border-l-4 border-cyan-400 text-slate-700 leading-relaxed shadow-sm">
                     {relatorio.resumo_semanal.texto_expectativa}
                   </div>
                 </div>
 
                 {/* Data */}
-                <div className="text-xs text-blue-600 pt-2">
-                  Enviado em {new Date(relatorio.resumo_semanal.data_fim_semana).toLocaleDateString('pt-BR', {
+                <div className="text-xs text-blue-600 pt-4 border-t border-blue-200">
+                  📅 {new Date(relatorio.resumo_semanal.data_fim_semana).toLocaleDateString('pt-BR', {
                     weekday: 'long',
                     year: 'numeric',
                     month: 'long',
@@ -263,16 +298,19 @@ export default function RelatorioSemanal({ pacienteId, token, onVoltar }) {
         </div>
 
         {/* Seção 2: Análise e Pontos de Atenção */}
-        <div className="bg-white rounded-2xl shadow-lg p-8 border border-slate-200">
+        <div className="bg-white rounded-2xl shadow-xl border border-slate-200 p-8 hover:shadow-2xl transition animate-fadeInUp">
           <div className="flex items-center justify-between mb-6">
-            <h2 className="text-3xl font-bold text-gray-800 flex items-center gap-2">
-              � Análise e Pontos de Atenção
-            </h2>
+            <div className="flex items-center gap-2">
+              <div className="p-2 bg-purple-100 rounded-lg">
+                <AlertTriangle className="text-purple-600" size={20} />
+              </div>
+              <h2 className="text-2xl font-bold text-slate-900">Análise e Pontos de Atenção</h2>
+            </div>
             {!analiseIA && (
               <button
                 onClick={gerarAnaliseIA}
                 disabled={gerando}
-                className="px-5 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:bg-gray-400 flex items-center gap-2 font-medium transition"
+                className="px-5 py-2 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-lg hover:from-purple-700 hover:to-pink-700 disabled:opacity-50 flex items-center gap-2 font-semibold transition shadow-lg"
               >
                 {gerando && <Loader className="animate-spin" size={18} />}
                 {gerando ? 'Gerando...' : '🤖 Gerar com IA'}
@@ -281,75 +319,89 @@ export default function RelatorioSemanal({ pacienteId, token, onVoltar }) {
           </div>
 
           {analiseIA ? (
-            <div className="bg-gradient-to-br from-indigo-50 to-purple-50 p-6 rounded-xl border border-indigo-200">
-              <div className="text-gray-800 leading-relaxed whitespace-pre-wrap">
+            <div className="bg-gradient-to-br from-purple-50 to-pink-50 p-8 rounded-xl border-2 border-purple-200">
+              <div className="text-slate-800 leading-relaxed space-y-4 whitespace-pre-wrap text-base">
                 {analiseIA}
               </div>
-              <div className="mt-6 text-sm text-gray-600 border-t border-indigo-200 pt-4">
-                <p>✨ Análise gerada automaticamente com IA - Consulte seu psicólogo para discussão aprofundada.</p>
+              <div className="mt-6 text-sm text-slate-600 border-t border-purple-200 pt-4">
+                <p className="flex items-center gap-2">
+                  <span className="text-lg">✨</span>
+                  Análise gerada automaticamente com IA - Consulte seu psicólogo para discussão aprofundada.
+                </p>
               </div>
             </div>
           ) : (
-            <div className="bg-gradient-to-br from-gray-50 to-gray-100 p-8 rounded-xl border-2 border-dashed border-gray-300 text-center">
-              <p className="text-gray-700 font-medium text-lg mb-3">
-                Clique em "Gerar com IA" para receber uma análise personalizada
+            <div className="bg-gradient-to-br from-slate-50 to-slate-100 p-12 rounded-xl border-2 border-dashed border-slate-300 text-center">
+              <AlertTriangle className="mx-auto mb-4 text-slate-400" size={40} />
+              <p className="text-slate-700 font-semibold text-lg mb-3">
+                Clique em "Gerar com IA" para análise personalizada
               </p>
-              <p className="text-gray-600">
-                baseada em seus questionários e contexto semanal.
+              <p className="text-slate-500">
+                com insights baseados em seus questionários e contexto semanal
               </p>
             </div>
           )}
         </div>
 
         {/* Detalhes dos Questionários */}
-        <div className="bg-white rounded-2xl shadow-lg p-8 border border-slate-200">
-          <h2 className="text-2xl font-bold text-gray-800 mb-6">📈 Detalhes por Questionário</h2>
+        <div className="bg-white rounded-2xl shadow-xl border border-slate-200 p-8 hover:shadow-2xl transition animate-fadeInUp">
+          <div className="flex items-center gap-2 mb-6">
+            <div className="p-2 bg-emerald-100 rounded-lg">
+              <TrendingUp className="text-emerald-600" size={20} />
+            </div>
+            <h2 className="text-2xl font-bold text-slate-900">Detalhes por Questionário</h2>
+          </div>
           
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {relatorio.questionarios.map((q, idx) => (
-              <div key={idx} className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-lg p-6 border-l-4" style={{ borderColor: q.cor }}>
-                <h3 className="font-bold text-lg text-gray-800 mb-4">{q.titulo.split('(')[0].trim()}</h3>
+              <div key={idx} className="bg-gradient-to-br from-slate-50 to-slate-100 rounded-xl p-6 border-l-4 hover:shadow-lg transition" style={{ borderColor: q.cor }}>
+                <h3 className="font-bold text-lg text-slate-800 mb-4 flex items-center gap-2">
+                  <span className="w-3 h-3 rounded-full" style={{ backgroundColor: q.cor }}></span>
+                  {q.titulo.split('(')[0].trim()}
+                </h3>
                 
-                <div className="space-y-3">
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm text-gray-600">Score Atual:</span>
+                <div className="space-y-4">
+                  <div className="flex justify-between items-center bg-white p-3 rounded-lg">
+                    <span className="text-sm text-slate-600">Score Atual:</span>
                     <span className="text-2xl font-bold" style={{ color: q.cor }}>{q.score_atual}</span>
                   </div>
                   
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm text-gray-600">Severidade:</span>
-                    <span className="text-sm font-semibold px-3 py-1 rounded" style={{ backgroundColor: q.cor + '20', color: q.cor }}>
+                  <div className="flex justify-between items-center bg-white p-3 rounded-lg">
+                    <span className="text-sm text-slate-600">Severidade:</span>
+                    <span className="text-sm font-semibold px-3 py-1 rounded-full" style={{ backgroundColor: q.cor + '20', color: q.cor }}>
                       {q.severidade}
                     </span>
                   </div>
 
-                  <hr className="my-3" />
-
-                  <div className="grid grid-cols-3 gap-2 text-center text-xs">
-                    <div>
-                      <p className="text-gray-600 mb-1">Mínima</p>
-                      <p className="font-bold text-red-600">{q.score_minimo}</p>
-                    </div>
-                    <div>
-                      <p className="text-gray-600 mb-1">Média</p>
-                      <p className="font-bold text-blue-600">{q.score_medio}</p>
-                    </div>
-                    <div>
-                      <p className="text-gray-600 mb-1">Máxima</p>
-                      <p className="font-bold text-green-600">{q.score_maximo}</p>
+                  <div className="bg-white rounded-lg p-3">
+                    <div className="grid grid-cols-3 gap-2 text-center text-xs">
+                      <div>
+                        <p className="text-slate-600 mb-1 font-semibold">Mínima</p>
+                        <p className="font-bold text-red-600 text-lg">{q.score_minimo}</p>
+                      </div>
+                      <div>
+                        <p className="text-slate-600 mb-1 font-semibold">Média</p>
+                        <p className="font-bold text-blue-600 text-lg">{q.score_medio}</p>
+                      </div>
+                      <div>
+                        <p className="text-slate-600 mb-1 font-semibold">Máxima</p>
+                        <p className="font-bold text-emerald-600 text-lg">{q.score_maximo}</p>
+                      </div>
                     </div>
                   </div>
 
-                  <div className="w-full bg-gray-300 rounded-full h-2 mt-4">
-                    <div 
-                      className="h-2 rounded-full transition-all" 
-                      style={{ 
-                        width: `${(q.score_atual / q.max_possivel) * 100}%`,
-                        backgroundColor: q.cor
-                      }}
-                    ></div>
+                  <div className="bg-white rounded-lg p-3">
+                    <div className="w-full bg-slate-200 rounded-full h-3">
+                      <div 
+                        className="h-3 rounded-full transition-all" 
+                        style={{ 
+                          width: `${(q.score_atual / q.max_possivel) * 100}%`,
+                          backgroundColor: q.cor
+                        }}
+                      ></div>
+                    </div>
+                    <p className="text-xs text-slate-600 text-center mt-2 font-semibold">{q.percentual}% do máximo</p>
                   </div>
-                  <p className="text-xs text-gray-600 text-center">{q.percentual}% do máximo</p>
                 </div>
               </div>
             ))}
@@ -357,9 +409,9 @@ export default function RelatorioSemanal({ pacienteId, token, onVoltar }) {
         </div>
 
         {/* Rodapé */}
-        <div className="border-t-2 border-gray-300 pt-6 text-center text-sm text-gray-600">
-          <p>Relatório gerado em {new Date(relatorio.data_geracao).toLocaleString('pt-BR')}</p>
-          <p className="mt-2 text-xs text-gray-500">© PsiDados - Sistema de Acompanhamento Psicológico</p>
+        <div className="border-t-2 border-slate-300 pt-8 text-center text-slate-600">
+          <p className="font-semibold">📊 Relatório gerado em {new Date(relatorio.data_geracao).toLocaleString('pt-BR')}</p>
+          <p className="text-xs text-slate-500 mt-2">© PsiDados - Sistema de Acompanhamento Psicológico</p>
         </div>
       </div>
     </div>
