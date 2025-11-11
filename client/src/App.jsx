@@ -7,7 +7,7 @@ import {
   Users, LogIn, LogOut, FileText, 
   ChevronRight, Brain, User, KeyRound, ArrowLeft, 
   Settings, Trash2, Edit, UserPlus, Save,
-  BugPlay, AlertCircle, BarChart3, TrendingUp, AlertTriangle
+  BugPlay, AlertCircle, BarChart3, TrendingUp, AlertTriangle, CheckCircle2
 } from 'lucide-react';
 import TestPanel from './components/TestPanel';
 import { useTestMode } from './contexts/TestModeContext';
@@ -463,70 +463,107 @@ const LoginPsicologo = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-100 flex items-center justify-center p-4">
-      <div className="w-full max-w-md p-8 space-y-6 bg-white rounded-lg shadow-xl">
-        <div className="text-center">
-          <Brain className="mx-auto h-12 w-12 text-teal-600" />
-          <h2 className="mt-4 text-3xl font-bold text-gray-900">
-            Portal do Psicólogo
-          </h2>
-        </div>
-        <form onSubmit={handleSubmit} className="space-y-5">
-          <div>
-            <label className="font-medium">Email</label>
-            <input
-              type="email"
-              required
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="w-full mt-2 px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500"
-              placeholder="seuemail@dominio.com"
-            />
+    <div className="min-h-screen bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 flex items-center justify-center p-4">
+      {/* Orbs de fundo */}
+      <div className="absolute top-0 left-0 w-96 h-96 bg-white/10 rounded-full blur-3xl -translate-x-1/2 -translate-y-1/2"></div>
+      <div className="absolute bottom-0 right-0 w-96 h-96 bg-white/10 rounded-full blur-3xl translate-x-1/2 translate-y-1/2"></div>
+      
+      <div className="w-full max-w-md z-10 backdrop-blur-xl">
+        <div className="bg-white/95 rounded-2xl shadow-2xl p-8 border border-white/20">
+          <div className="text-center mb-8">
+            <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-indigo-600 to-purple-600 rounded-2xl shadow-lg mb-4">
+              <Brain className="h-8 w-8 text-white" />
+            </div>
+            <h2 className="text-3xl font-bold text-slate-900 mt-4">
+              Portal do Psicólogo
+            </h2>
+            <p className="text-slate-600 mt-2">Acesse sua conta para gerenciar pacientes</p>
           </div>
-          <div>
-            <label className="font-medium">CRP</label>
-            <input
-              type="text"
-              required
-              value={crp}
-              onChange={(e) => setCrp(e.target.value)}
-              className="w-full mt-2 px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500"
-              placeholder="00/12345"
-            />
-          </div>
-           <div>
-            <label className="font-medium">Senha</label>
-            <input
-              type="password"
-              required
-              value={senha}
-              onChange={(e) => setSenha(e.target.value)}
-              className="w-full mt-2 px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500"
-              placeholder="********"
-            />
-          </div>
-          {error && <p className="text-sm text-red-600 text-center">{error}</p>}
-          <button 
-            type="submit"
-            disabled={isLoading}
-            className="w-full flex justify-center py-3 px-4 border border-transparent rounded-md shadow-sm text-lg font-medium text-white bg-teal-600 hover:bg-teal-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-500 transition duration-300 disabled:bg-teal-400"
-          >
-            {isLoading ? (
-              <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-              </svg>
-            ) : (
-              <LogIn className="mr-2 h-5 w-5" />
+
+          <form onSubmit={handleSubmit} className="space-y-5">
+            <div>
+              <label className="block text-sm font-semibold text-slate-700 mb-2">Email</label>
+              <input
+                type="email"
+                required
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                disabled={isLoading}
+                className="w-full px-4 py-3 border-2 border-slate-200 rounded-lg focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition bg-slate-50 disabled:bg-slate-100"
+                placeholder="seuemail@dominio.com"
+              />
+            </div>
+            
+            <div>
+              <label className="block text-sm font-semibold text-slate-700 mb-2">CRP</label>
+              <input
+                type="text"
+                required
+                value={crp}
+                onChange={(e) => setCrp(e.target.value)}
+                disabled={isLoading}
+                className="w-full px-4 py-3 border-2 border-slate-200 rounded-lg focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition bg-slate-50 disabled:bg-slate-100"
+                placeholder="00/12345"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-semibold text-slate-700 mb-2">Senha</label>
+              <input
+                type="password"
+                required
+                value={senha}
+                onChange={(e) => setSenha(e.target.value)}
+                disabled={isLoading}
+                className="w-full px-4 py-3 border-2 border-slate-200 rounded-lg focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition bg-slate-50 disabled:bg-slate-100"
+                placeholder="••••••••"
+              />
+            </div>
+
+            {error && (
+              <div className="flex items-center gap-3 p-4 bg-red-50 border-2 border-red-200 rounded-lg">
+                <AlertTriangle className="text-red-600" size={20} />
+                <p className="text-sm font-medium text-red-700">{error}</p>
+              </div>
             )}
-            {isLoading ? 'Entrando...' : 'Entrar'}
-          </button>
-        </form>
-         <p className="mt-6 text-center text-sm space-x-2">
-          <Link to="/" className="text-teal-600 hover:underline">Voltar para Home</Link>
-          <span>|</span>
-          <Link to="/registrar-psicologo" className="text-teal-600 hover:underline">Criar conta</Link>
-        </p>
+
+            <button 
+              type="submit"
+              disabled={isLoading}
+              className="w-full py-3 px-4 bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-semibold rounded-lg shadow-lg hover:from-indigo-700 hover:to-purple-700 disabled:opacity-50 transition-all flex items-center justify-center gap-2"
+            >
+              {isLoading ? (
+                <>
+                  <svg className="animate-spin h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  Entrando...
+                </>
+              ) : (
+                <>
+                  <LogIn size={20} />
+                  Entrar
+                </>
+              )}
+            </button>
+          </form>
+
+          <div className="mt-8 pt-6 border-t border-slate-200">
+            <p className="text-center text-slate-600 mb-4">Não tem conta?</p>
+            <Link
+              to="/registrar-psicologo"
+              className="w-full py-3 px-4 border-2 border-indigo-600 text-indigo-600 font-semibold rounded-lg hover:bg-indigo-50 transition text-center flex items-center justify-center gap-2"
+            >
+              <UserPlus size={20} />
+              Criar Conta
+            </Link>
+          </div>
+
+          <p className="mt-6 text-center text-sm text-slate-500">
+            <Link to="/" className="text-indigo-600 hover:underline font-medium">← Voltar para Home</Link>
+          </p>
+        </div>
       </div>
     </div>
   );
@@ -595,62 +632,91 @@ const LoginPaciente = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-100 flex items-center justify-center p-4">
-      <div className="w-full max-w-sm p-8 space-y-6 bg-white rounded-lg shadow-xl">
-        <div className="text-center">
-          <KeyRound className="mx-auto h-12 w-12 text-teal-600" />
-          <h2 className="mt-4 text-3xl font-bold text-gray-900">
-            Portal do Paciente
-          </h2>
-          <p className="mt-2 text-gray-600">Use seu código de acesso para entrar.</p>
-        </div>
-        <form onSubmit={handleSubmit} className="space-y-5">
-          <div>
-            <label className="font-medium">Código de Acesso</label>
-            <input
-              type="text"
-              required
-              value={codigo}
-              onChange={(e) => setCodigo(e.target.value)}
-              className="w-full mt-2 px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500"
-              placeholder="XXXXXX"
-            />
+    <div className="min-h-screen bg-gradient-to-br from-emerald-500 via-teal-500 to-cyan-500 flex items-center justify-center p-4">
+      {/* Orbs de fundo */}
+      <div className="absolute top-0 right-0 w-96 h-96 bg-white/10 rounded-full blur-3xl translate-x-1/2 -translate-y-1/2"></div>
+      <div className="absolute bottom-0 left-0 w-96 h-96 bg-white/10 rounded-full blur-3xl -translate-x-1/2 translate-y-1/2"></div>
+      
+      <div className="w-full max-w-md z-10 backdrop-blur-xl">
+        <div className="bg-white/95 rounded-2xl shadow-2xl p-8 border border-white/20">
+          <div className="text-center mb-8">
+            <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-emerald-600 to-teal-600 rounded-2xl shadow-lg mb-4">
+              <KeyRound className="h-8 w-8 text-white" />
+            </div>
+            <h2 className="text-3xl font-bold text-slate-900 mt-4">
+              Portal do Paciente
+            </h2>
+            <p className="text-slate-600 mt-2">Use seu código de acesso para entrar</p>
           </div>
-          {error && <p className="text-sm text-red-600 text-center">{error}</p>}
-          <button 
-            type="submit"
-            disabled={isLoading}
-            className="w-full flex justify-center py-3 px-4 border border-transparent rounded-md shadow-sm text-lg font-medium text-white bg-teal-600 hover:bg-teal-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-500 transition duration-300 disabled:bg-teal-400"
-          >
-             {isLoading ? (
-              <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-              </svg>
-            ) : (
-              <LogIn className="mr-2 h-5 w-5" />
-            )}
-            {isLoading ? 'Entrando...' : 'Entrar'}
-          </button>
-        </form>
-         <p className="mt-6 text-center text-sm">
-          <Link to="/" className="text-teal-600 hover:underline">Voltar para Home</Link>
-        </p>
 
-        {/* Seção de Debug */}
-        {process.env.NODE_ENV === 'development' && debugInfo.length > 0 && (
-          <div className="mt-8 p-4 border border-gray-200 rounded-lg bg-gray-50">
-            <h3 className="text-sm font-semibold text-gray-700 mb-2">Debug Info:</h3>
-            <div className="text-xs font-mono bg-white p-2 rounded max-h-40 overflow-y-auto">
-              {debugInfo.map((info, index) => (
-                <div key={index} className={`mb-1 ${
-                  info.type === 'error' ? 'text-red-600' : 
-                  info.type === 'warn' ? 'text-yellow-600' : 
-                  'text-gray-600'
-                }`}>
-                  [{info.timestamp.split('T')[1].split('.')[0]}] {info.message}
-                </div>
-              ))}
+          <form onSubmit={handleSubmit} className="space-y-5">
+            <div>
+              <label className="block text-sm font-semibold text-slate-700 mb-2">Código de Acesso</label>
+              <input
+                type="text"
+                required
+                value={codigo}
+                onChange={(e) => setCodigo(e.target.value)}
+                disabled={isLoading}
+                className="w-full px-4 py-3 text-center text-2xl tracking-widest border-2 border-slate-200 rounded-lg focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 transition bg-slate-50 disabled:bg-slate-100 uppercase"
+                placeholder="XXXXXX"
+              />
+            </div>
+
+            {error && (
+              <div className="flex items-center gap-3 p-4 bg-red-50 border-2 border-red-200 rounded-lg">
+                <AlertTriangle className="text-red-600" size={20} />
+                <p className="text-sm font-medium text-red-700">{error}</p>
+              </div>
+            )}
+
+            {successMessage && (
+              <div className="flex items-center gap-3 p-4 bg-emerald-50 border-2 border-emerald-200 rounded-lg">
+                <CheckCircle2 className="text-emerald-600" size={20} />
+                <p className="text-sm font-medium text-emerald-700">{successMessage}</p>
+              </div>
+            )}
+
+            <button 
+              type="submit"
+              disabled={isLoading}
+              className="w-full py-3 px-4 bg-gradient-to-r from-emerald-600 to-teal-600 text-white font-semibold rounded-lg shadow-lg hover:from-emerald-700 hover:to-teal-700 disabled:opacity-50 transition-all flex items-center justify-center gap-2"
+            >
+              {isLoading ? (
+                <>
+                  <svg className="animate-spin h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  Entrando...
+                </>
+              ) : (
+                <>
+                  <LogIn size={20} />
+                  Entrar com Código
+                </>
+              )}
+            </button>
+          </form>
+
+          <p className="mt-8 text-center text-sm text-slate-600">
+            <Link to="/" className="text-emerald-600 hover:underline font-medium">← Voltar para Home</Link>
+          </p>
+
+          {/* Seção de Debug */}
+          {process.env.NODE_ENV === 'development' && debugInfo.length > 0 && (
+            <div className="mt-6 p-3 border border-slate-200 rounded-lg bg-slate-50 max-h-32 overflow-y-auto">
+              <h3 className="text-xs font-semibold text-slate-600 mb-2">Debug Info:</h3>
+              <div className="text-xs font-mono space-y-1">
+                {debugInfo.map((info, index) => (
+                  <div key={index} className={`${
+                    info.type === 'error' ? 'text-red-600' : 
+                    info.type === 'warn' ? 'text-amber-600' : 
+                    'text-slate-600'
+                  }`}>
+                    [{info.timestamp.split('T')[1].split('.')[0]}] {info.message}
+                  </div>
+                ))}
             </div>
           </div>
         )}
@@ -708,35 +774,131 @@ const RegistroPsicologo = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-100 flex items-center justify-center p-4">
-      <div className="w-full max-w-md p-8 space-y-6 bg-white rounded-lg shadow-xl">
-        <div className="text-center">
-          <UserPlus className="mx-auto h-12 w-12 text-teal-600" />
-          <h2 className="mt-4 text-3xl font-bold text-gray-900">
-            Criar Conta (Psicólogo)
-          </h2>
-        </div>
-        <form onSubmit={handleSubmit} className="space-y-5">
-          <InputForm label="Nome Completo" name="nome" type="text" value={formData.nome} onChange={handleChange} disabled={isLoading} />
-          <InputForm label="Email" name="email" type="email" value={formData.email} onChange={handleChange} disabled={isLoading} />
-          <InputForm label="CRP" name="crp" type="text" value={formData.crp} onChange={handleChange} disabled={isLoading} placeholder="00/12345" />
-          <InputForm label="Senha" name="senha" type="password" value={formData.senha} onChange={handleChange} disabled={isLoading} placeholder="Min. 6 caracteres" />
-          
-          {error && <p className="text-sm text-red-600 text-center">{error}</p>}
-          {success && <p className="text-sm text-green-600 text-center">{success}</p>}
+    <div className="min-h-screen bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 flex items-center justify-center p-4">
+      {/* Orbs de fundo */}
+      <div className="absolute top-0 left-0 w-96 h-96 bg-white/10 rounded-full blur-3xl -translate-x-1/2 -translate-y-1/2"></div>
+      <div className="absolute bottom-0 right-0 w-96 h-96 bg-white/10 rounded-full blur-3xl translate-x-1/2 translate-y-1/2"></div>
+      
+      <div className="w-full max-w-md z-10 backdrop-blur-xl">
+        <div className="bg-white/95 rounded-2xl shadow-2xl p-8 border border-white/20">
+          <div className="text-center mb-8">
+            <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-indigo-600 to-purple-600 rounded-2xl shadow-lg mb-4">
+              <UserPlus className="h-8 w-8 text-white" />
+            </div>
+            <h2 className="text-3xl font-bold text-slate-900 mt-4">
+              Criar Conta (Psicólogo)
+            </h2>
+            <p className="text-slate-600 mt-2">Registre-se para gerenciar seus pacientes</p>
+          </div>
 
-          <button 
-            type="submit"
-            disabled={isLoading || !!success}
-            className="w-full flex justify-center py-3 px-4 border border-transparent rounded-md shadow-sm text-lg font-medium text-white bg-teal-600 hover:bg-teal-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-500 transition duration-300 disabled:bg-teal-400"
-          >
-            {isLoading ? <Spinner /> : <UserPlus className="mr-2 h-5 w-5" />}
-            {isLoading ? 'A Criar...' : 'Criar Conta'}
-          </button>
-        </form>
-         <p className="mt-6 text-center text-sm">
-          <Link to="/login-psicologo" className="text-teal-600 hover:underline">Já tem conta? Entrar</Link>
-        </p>
+          <form onSubmit={handleSubmit} className="space-y-5">
+            <div>
+              <label className="block text-sm font-semibold text-slate-700 mb-2">Nome Completo</label>
+              <input
+                type="text"
+                name="nome_completo"
+                required
+                value={formData.nome_completo}
+                onChange={handleChange}
+                disabled={isLoading}
+                className="w-full px-4 py-3 border-2 border-slate-200 rounded-lg focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition bg-slate-50 disabled:bg-slate-100"
+                placeholder="Seu nome completo"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-semibold text-slate-700 mb-2">Email</label>
+              <input
+                type="email"
+                name="email"
+                required
+                value={formData.email}
+                onChange={handleChange}
+                disabled={isLoading}
+                className="w-full px-4 py-3 border-2 border-slate-200 rounded-lg focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition bg-slate-50 disabled:bg-slate-100"
+                placeholder="seuemail@dominio.com"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-semibold text-slate-700 mb-2">CRP</label>
+              <input
+                type="text"
+                name="crp"
+                required
+                value={formData.crp}
+                onChange={handleChange}
+                disabled={isLoading}
+                className="w-full px-4 py-3 border-2 border-slate-200 rounded-lg focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition bg-slate-50 disabled:bg-slate-100"
+                placeholder="00/12345"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-semibold text-slate-700 mb-2">Senha</label>
+              <input
+                type="password"
+                name="senha"
+                required
+                value={formData.senha}
+                onChange={handleChange}
+                disabled={isLoading}
+                className="w-full px-4 py-3 border-2 border-slate-200 rounded-lg focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition bg-slate-50 disabled:bg-slate-100"
+                placeholder="Mínimo 6 caracteres"
+              />
+            </div>
+
+            {error && (
+              <div className="flex items-center gap-3 p-4 bg-red-50 border-2 border-red-200 rounded-lg">
+                <AlertTriangle className="text-red-600" size={20} />
+                <p className="text-sm font-medium text-red-700">{error}</p>
+              </div>
+            )}
+
+            {success && (
+              <div className="flex items-center gap-3 p-4 bg-emerald-50 border-2 border-emerald-200 rounded-lg">
+                <CheckCircle2 className="text-emerald-600" size={20} />
+                <p className="text-sm font-medium text-emerald-700">{success}</p>
+              </div>
+            )}
+
+            <button 
+              type="submit"
+              disabled={isLoading || !!success}
+              className="w-full py-3 px-4 bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-semibold rounded-lg shadow-lg hover:from-indigo-700 hover:to-purple-700 disabled:opacity-50 transition-all flex items-center justify-center gap-2"
+            >
+              {isLoading ? (
+                <>
+                  <svg className="animate-spin h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  Criando...
+                </>
+              ) : (
+                <>
+                  <UserPlus size={20} />
+                  Criar Conta
+                </>
+              )}
+            </button>
+          </form>
+
+          <div className="mt-8 pt-6 border-t border-slate-200">
+            <p className="text-center text-slate-600 mb-4">Já tem conta?</p>
+            <Link
+              to="/login-psicologo"
+              className="w-full py-3 px-4 border-2 border-indigo-600 text-indigo-600 font-semibold rounded-lg hover:bg-indigo-50 transition text-center flex items-center justify-center gap-2"
+            >
+              <LogIn size={20} />
+              Entrar
+            </Link>
+          </div>
+
+          <p className="mt-6 text-center text-sm text-slate-500">
+            <Link to="/" className="text-indigo-600 hover:underline font-medium">← Voltar para Home</Link>
+          </p>
+        </div>
       </div>
     </div>
   );
@@ -2235,14 +2397,16 @@ const InputForm = ({ label, name, type, value, onChange, disabled, placeholder =
 );
 
 const FormWrapper = ({ titulo, linkVoltar, children }) => (
-  <div>
-    <Link to={linkVoltar} className="flex items-center text-teal-600 hover:underline mb-4">
-      <ArrowLeft className="mr-2 h-4 w-4" />
-      Voltar
-    </Link>
-    <div className="bg-white p-8 rounded-lg shadow-lg max-w-lg mx-auto">
-      <h1 className="text-2xl font-bold mb-6 text-gray-800">{titulo}</h1>
-      {children}
+  <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-6">
+    <div className="max-w-2xl mx-auto">
+      <Link to={linkVoltar} className="inline-flex items-center gap-2 text-indigo-600 hover:text-indigo-700 font-semibold mb-8 group">
+        <ArrowLeft size={20} className="group-hover:-translate-x-1 transition" />
+        Voltar
+      </Link>
+      <div className="bg-white rounded-2xl shadow-xl border border-slate-200 p-8">
+        <h1 className="text-3xl font-bold mb-8 text-slate-900">{titulo}</h1>
+        {children}
+      </div>
     </div>
   </div>
 );
@@ -2250,14 +2414,18 @@ const FormWrapper = ({ titulo, linkVoltar, children }) => (
 const FormStatus = ({ success, error }) => (
   <>
     {success && (
-      <div className="p-3 rounded-md bg-green-100 text-green-800 text-center font-medium">
-        <p>{success}</p>
-        <p className="text-sm">Redirecionando...</p>
+      <div className="flex items-center gap-3 p-4 rounded-lg bg-emerald-50 border-2 border-emerald-200 text-emerald-700">
+        <CheckCircle2 size={20} className="flex-shrink-0" />
+        <div>
+          <p className="font-semibold">{success}</p>
+          <p className="text-sm">Redirecionando...</p>
+        </div>
       </div>
     )}
     {error && (
-      <div className="p-3 rounded-md bg-red-100 text-red-800 text-center font-medium">
-        {error}
+      <div className="flex items-center gap-3 p-4 rounded-lg bg-red-50 border-2 border-red-200 text-red-700">
+        <AlertTriangle size={20} className="flex-shrink-0" />
+        <p className="font-semibold">{error}</p>
       </div>
     )}
   </>
@@ -2267,10 +2435,22 @@ const BotaoSubmit = ({ label, labelLoading, isLoading, icon }) => (
   <button 
     type="submit"
     disabled={isLoading}
-    className="w-full flex items-center justify-center px-6 py-3 bg-teal-600 text-white rounded-md font-semibold shadow-lg hover:bg-teal-700 transition duration-300 disabled:bg-teal-400"
+    className="w-full flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-lg font-semibold shadow-lg hover:from-indigo-700 hover:to-purple-700 disabled:opacity-50 transition-all"
   >
-    {isLoading ? <Spinner /> : React.cloneElement(icon, { className: "mr-2 h-5 w-5" })}
-    {isLoading ? labelLoading : label}
+    {isLoading ? (
+      <>
+        <svg className="animate-spin h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+        </svg>
+        {labelLoading}
+      </>
+    ) : (
+      <>
+        {icon && React.cloneElement(icon, { className: "w-5 h-5" })}
+        {label}
+      </>
+    )}
   </button>
 );
 
