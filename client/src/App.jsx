@@ -463,66 +463,62 @@ const LoginPsicologo = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 flex items-center justify-center p-4">
-      {/* Orbs de fundo */}
-      <div className="absolute top-0 left-0 w-96 h-96 bg-white/10 rounded-full blur-3xl -translate-x-1/2 -translate-y-1/2"></div>
-      <div className="absolute bottom-0 right-0 w-96 h-96 bg-white/10 rounded-full blur-3xl translate-x-1/2 translate-y-1/2"></div>
-      
-      <div className="w-full max-w-md z-10 backdrop-blur-xl">
-        <div className="bg-white/95 rounded-2xl shadow-2xl p-8 border border-white/20">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center p-4">
+      <div className="w-full max-w-md z-10">
+        <div className="bg-white rounded-xl shadow-md p-8 border border-slate-200">
           <div className="text-center mb-8">
-            <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-indigo-600 to-purple-600 rounded-2xl shadow-lg mb-4">
-              <Brain className="h-8 w-8 text-white" />
+            <div className="inline-flex items-center justify-center w-14 h-14 bg-indigo-100 rounded-xl mb-4">
+              <Brain className="h-7 w-7 text-indigo-600" />
             </div>
-            <h2 className="text-3xl font-bold text-slate-900 mt-4">
+            <h2 className="text-2xl font-bold text-slate-900 mt-4">
               Portal do Psicólogo
             </h2>
-            <p className="text-slate-600 mt-2">Acesse sua conta para gerenciar pacientes</p>
+            <p className="text-slate-600 text-sm mt-2">Acesse sua conta</p>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-5">
+          <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label className="block text-sm font-semibold text-slate-700 mb-2">Email</label>
+              <label className="block text-sm font-medium text-slate-700 mb-1.5">Email</label>
               <input
                 type="email"
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 disabled={isLoading}
-                className="w-full px-4 py-3 border-2 border-slate-200 rounded-lg focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition bg-slate-50 disabled:bg-slate-100"
-                placeholder="seuemail@dominio.com"
+                className="w-full px-3 py-2.5 border border-slate-300 rounded-lg focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition bg-white disabled:bg-slate-50 text-sm"
+                placeholder="seu@email.com"
               />
             </div>
             
             <div>
-              <label className="block text-sm font-semibold text-slate-700 mb-2">CRP</label>
+              <label className="block text-sm font-medium text-slate-700 mb-1.5">CRP</label>
               <input
                 type="text"
                 required
                 value={crp}
                 onChange={(e) => setCrp(e.target.value)}
                 disabled={isLoading}
-                className="w-full px-4 py-3 border-2 border-slate-200 rounded-lg focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition bg-slate-50 disabled:bg-slate-100"
+                className="w-full px-3 py-2.5 border border-slate-300 rounded-lg focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition bg-white disabled:bg-slate-50 text-sm"
                 placeholder="00/12345"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-semibold text-slate-700 mb-2">Senha</label>
+              <label className="block text-sm font-medium text-slate-700 mb-1.5">Senha</label>
               <input
                 type="password"
                 required
                 value={senha}
                 onChange={(e) => setSenha(e.target.value)}
                 disabled={isLoading}
-                className="w-full px-4 py-3 border-2 border-slate-200 rounded-lg focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition bg-slate-50 disabled:bg-slate-100"
+                className="w-full px-3 py-2.5 border border-slate-300 rounded-lg focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition bg-white disabled:bg-slate-50 text-sm"
                 placeholder="••••••••"
               />
             </div>
 
             {error && (
-              <div className="flex items-center gap-3 p-4 bg-red-50 border-2 border-red-200 rounded-lg">
-                <AlertTriangle className="text-red-600" size={20} />
+              <div className="flex items-center gap-2 p-3 bg-red-50 border border-red-200 rounded-lg">
+                <AlertTriangle className="text-red-600 flex-shrink-0" size={16} />
                 <p className="text-sm font-medium text-red-700">{error}</p>
               </div>
             )}
@@ -530,11 +526,11 @@ const LoginPsicologo = () => {
             <button 
               type="submit"
               disabled={isLoading}
-              className="w-full py-3 px-4 bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-semibold rounded-lg shadow-lg hover:from-indigo-700 hover:to-purple-700 disabled:opacity-50 transition-all flex items-center justify-center gap-2"
+              className="w-full py-2.5 px-4 bg-indigo-600 text-white font-medium rounded-lg hover:bg-indigo-700 disabled:opacity-50 transition-all flex items-center justify-center gap-2 text-sm"
             >
               {isLoading ? (
                 <>
-                  <svg className="animate-spin h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                   </svg>
@@ -542,26 +538,26 @@ const LoginPsicologo = () => {
                 </>
               ) : (
                 <>
-                  <LogIn size={20} />
+                  <LogIn size={16} />
                   Entrar
                 </>
               )}
             </button>
           </form>
 
-          <div className="mt-8 pt-6 border-t border-slate-200">
-            <p className="text-center text-slate-600 mb-4">Não tem conta?</p>
+          <div className="mt-6 pt-6 border-t border-slate-200 space-y-3">
+            <p className="text-center text-sm text-slate-600">Não tem conta?</p>
             <Link
               to="/registrar-psicologo"
-              className="w-full py-3 px-4 border-2 border-indigo-600 text-indigo-600 font-semibold rounded-lg hover:bg-indigo-50 transition text-center flex items-center justify-center gap-2"
+              className="w-full py-2.5 px-4 border border-indigo-600 text-indigo-600 font-medium rounded-lg hover:bg-indigo-50 transition text-center flex items-center justify-center gap-2 text-sm"
             >
-              <UserPlus size={20} />
+              <UserPlus size={16} />
               Criar Conta
             </Link>
           </div>
 
-          <p className="mt-6 text-center text-sm text-slate-500">
-            <Link to="/" className="text-indigo-600 hover:underline font-medium">← Voltar para Home</Link>
+          <p className="mt-4 text-center text-xs text-slate-500">
+            <Link to="/" className="text-indigo-600 hover:underline">← Voltar</Link>
           </p>
         </div>
       </div>
@@ -632,47 +628,43 @@ const LoginPaciente = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-emerald-500 via-teal-500 to-cyan-500 flex items-center justify-center p-4">
-      {/* Orbs de fundo */}
-      <div className="absolute top-0 right-0 w-96 h-96 bg-white/10 rounded-full blur-3xl translate-x-1/2 -translate-y-1/2"></div>
-      <div className="absolute bottom-0 left-0 w-96 h-96 bg-white/10 rounded-full blur-3xl -translate-x-1/2 translate-y-1/2"></div>
-      
-      <div className="w-full max-w-md z-10 backdrop-blur-xl">
-        <div className="bg-white/95 rounded-2xl shadow-2xl p-8 border border-white/20">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center p-4">
+      <div className="w-full max-w-md z-10">
+        <div className="bg-white rounded-xl shadow-md p-8 border border-slate-200">
           <div className="text-center mb-8">
-            <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-emerald-600 to-teal-600 rounded-2xl shadow-lg mb-4">
-              <KeyRound className="h-8 w-8 text-white" />
+            <div className="inline-flex items-center justify-center w-14 h-14 bg-indigo-100 rounded-xl mb-4">
+              <LogIn className="h-7 w-7 text-indigo-600" />
             </div>
-            <h2 className="text-3xl font-bold text-slate-900 mt-4">
+            <h2 className="text-2xl font-bold text-slate-900 mt-4">
               Portal do Paciente
             </h2>
-            <p className="text-slate-600 mt-2">Use seu código de acesso para entrar</p>
+            <p className="text-slate-600 text-sm mt-2">Insira seu código de acesso</p>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-5">
+          <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label className="block text-sm font-semibold text-slate-700 mb-2">Código de Acesso</label>
+              <label className="block text-sm font-medium text-slate-700 mb-1.5">Código de Acesso</label>
               <input
                 type="text"
                 required
                 value={codigo}
                 onChange={(e) => setCodigo(e.target.value)}
                 disabled={isLoading}
-                className="w-full px-4 py-3 text-center text-2xl tracking-widest border-2 border-slate-200 rounded-lg focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 transition bg-slate-50 disabled:bg-slate-100 uppercase"
+                className="w-full px-3 py-2.5 text-center text-lg tracking-widest border border-slate-300 rounded-lg focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition bg-white disabled:bg-slate-50 uppercase text-sm"
                 placeholder="XXXXXX"
               />
             </div>
 
             {error && (
-              <div className="flex items-center gap-3 p-4 bg-red-50 border-2 border-red-200 rounded-lg">
-                <AlertTriangle className="text-red-600" size={20} />
+              <div className="flex items-center gap-2 p-3 bg-red-50 border border-red-200 rounded-lg">
+                <AlertTriangle className="text-red-600 flex-shrink-0" size={16} />
                 <p className="text-sm font-medium text-red-700">{error}</p>
               </div>
             )}
 
             {successMessage && (
-              <div className="flex items-center gap-3 p-4 bg-emerald-50 border-2 border-emerald-200 rounded-lg">
-                <CheckCircle2 className="text-emerald-600" size={20} />
+              <div className="flex items-center gap-2 p-3 bg-emerald-50 border border-emerald-200 rounded-lg">
+                <CheckCircle2 className="text-emerald-600 flex-shrink-0" size={16} />
                 <p className="text-sm font-medium text-emerald-700">{successMessage}</p>
               </div>
             )}
@@ -680,11 +672,11 @@ const LoginPaciente = () => {
             <button 
               type="submit"
               disabled={isLoading}
-              className="w-full py-3 px-4 bg-gradient-to-r from-emerald-600 to-teal-600 text-white font-semibold rounded-lg shadow-lg hover:from-emerald-700 hover:to-teal-700 disabled:opacity-50 transition-all flex items-center justify-center gap-2"
+              className="w-full py-2.5 px-4 bg-indigo-600 text-white font-medium rounded-lg hover:bg-indigo-700 disabled:opacity-50 transition-all flex items-center justify-center gap-2 text-sm"
             >
               {isLoading ? (
                 <>
-                  <svg className="animate-spin h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                   </svg>
@@ -692,34 +684,35 @@ const LoginPaciente = () => {
                 </>
               ) : (
                 <>
-                  <LogIn size={20} />
-                  Entrar com Código
+                  <LogIn size={16} />
+                  Entrar
                 </>
               )}
             </button>
           </form>
 
-          <p className="mt-8 text-center text-sm text-slate-600">
-            <Link to="/" className="text-emerald-600 hover:underline font-medium">← Voltar para Home</Link>
+          <p className="mt-6 text-center text-xs text-slate-500">
+            <Link to="/" className="text-indigo-600 hover:underline">← Voltar</Link>
           </p>
 
           {/* Seção de Debug */}
           {process.env.NODE_ENV === 'development' && debugInfo.length > 0 && (
-            <div className="mt-6 p-3 border border-slate-200 rounded-lg bg-slate-50 max-h-32 overflow-y-auto">
-              <h3 className="text-xs font-semibold text-slate-600 mb-2">Debug Info:</h3>
-              <div className="text-xs font-mono space-y-1">
+            <div className="mt-6 pt-4 border-t border-slate-200 text-xs bg-slate-50 p-2 rounded">
+              <h3 className="text-xs font-semibold text-slate-600 mb-1">Debug:</h3>
+              <div className="text-xs space-y-1 max-h-24 overflow-y-auto">
                 {debugInfo.map((info, index) => (
                   <div key={index} className={`${
                     info.type === 'error' ? 'text-red-600' : 
                     info.type === 'warn' ? 'text-amber-600' : 
                     'text-slate-600'
                   }`}>
-                    [{info.timestamp.split('T')[1].split('.')[0]}] {info.message}
+                    {info.message}
                   </div>
                 ))}
               </div>
             </div>
           )}
+        </div>
       </div>
     </div>
   );
@@ -774,26 +767,22 @@ const RegistroPsicologo = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 flex items-center justify-center p-4">
-      {/* Orbs de fundo */}
-      <div className="absolute top-0 left-0 w-96 h-96 bg-white/10 rounded-full blur-3xl -translate-x-1/2 -translate-y-1/2"></div>
-      <div className="absolute bottom-0 right-0 w-96 h-96 bg-white/10 rounded-full blur-3xl translate-x-1/2 translate-y-1/2"></div>
-      
-      <div className="w-full max-w-md z-10 backdrop-blur-xl">
-        <div className="bg-white/95 rounded-2xl shadow-2xl p-8 border border-white/20">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center p-4">
+      <div className="w-full max-w-md z-10">
+        <div className="bg-white rounded-xl shadow-md p-8 border border-slate-200">
           <div className="text-center mb-8">
-            <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-indigo-600 to-purple-600 rounded-2xl shadow-lg mb-4">
-              <UserPlus className="h-8 w-8 text-white" />
+            <div className="inline-flex items-center justify-center w-14 h-14 bg-indigo-100 rounded-xl mb-4">
+              <UserPlus className="h-7 w-7 text-indigo-600" />
             </div>
-            <h2 className="text-3xl font-bold text-slate-900 mt-4">
-              Criar Conta (Psicólogo)
+            <h2 className="text-2xl font-bold text-slate-900 mt-4">
+              Criar Conta
             </h2>
-            <p className="text-slate-600 mt-2">Registre-se para gerenciar seus pacientes</p>
+            <p className="text-slate-600 text-sm mt-2">Registre-se como psicólogo</p>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-5">
+          <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label className="block text-sm font-semibold text-slate-700 mb-2">Nome Completo</label>
+              <label className="block text-sm font-medium text-slate-700 mb-1.5">Nome Completo</label>
               <input
                 type="text"
                 name="nome_completo"
@@ -801,13 +790,13 @@ const RegistroPsicologo = () => {
                 value={formData.nome_completo}
                 onChange={handleChange}
                 disabled={isLoading}
-                className="w-full px-4 py-3 border-2 border-slate-200 rounded-lg focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition bg-slate-50 disabled:bg-slate-100"
-                placeholder="Seu nome completo"
+                className="w-full px-3 py-2.5 border border-slate-300 rounded-lg focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition bg-white disabled:bg-slate-50 text-sm"
+                placeholder="Seu nome"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-semibold text-slate-700 mb-2">Email</label>
+              <label className="block text-sm font-medium text-slate-700 mb-1.5">Email</label>
               <input
                 type="email"
                 name="email"
@@ -815,13 +804,13 @@ const RegistroPsicologo = () => {
                 value={formData.email}
                 onChange={handleChange}
                 disabled={isLoading}
-                className="w-full px-4 py-3 border-2 border-slate-200 rounded-lg focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition bg-slate-50 disabled:bg-slate-100"
-                placeholder="seuemail@dominio.com"
+                className="w-full px-3 py-2.5 border border-slate-300 rounded-lg focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition bg-white disabled:bg-slate-50 text-sm"
+                placeholder="seu@email.com"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-semibold text-slate-700 mb-2">CRP</label>
+              <label className="block text-sm font-medium text-slate-700 mb-1.5">CRP</label>
               <input
                 type="text"
                 name="crp"
@@ -829,13 +818,13 @@ const RegistroPsicologo = () => {
                 value={formData.crp}
                 onChange={handleChange}
                 disabled={isLoading}
-                className="w-full px-4 py-3 border-2 border-slate-200 rounded-lg focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition bg-slate-50 disabled:bg-slate-100"
+                className="w-full px-3 py-2.5 border border-slate-300 rounded-lg focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition bg-white disabled:bg-slate-50 text-sm"
                 placeholder="00/12345"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-semibold text-slate-700 mb-2">Senha</label>
+              <label className="block text-sm font-medium text-slate-700 mb-1.5">Senha</label>
               <input
                 type="password"
                 name="senha"
@@ -843,21 +832,21 @@ const RegistroPsicologo = () => {
                 value={formData.senha}
                 onChange={handleChange}
                 disabled={isLoading}
-                className="w-full px-4 py-3 border-2 border-slate-200 rounded-lg focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition bg-slate-50 disabled:bg-slate-100"
-                placeholder="Mínimo 6 caracteres"
+                className="w-full px-3 py-2.5 border border-slate-300 rounded-lg focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition bg-white disabled:bg-slate-50 text-sm"
+                placeholder="••••••••"
               />
             </div>
 
             {error && (
-              <div className="flex items-center gap-3 p-4 bg-red-50 border-2 border-red-200 rounded-lg">
-                <AlertTriangle className="text-red-600" size={20} />
+              <div className="flex items-center gap-2 p-3 bg-red-50 border border-red-200 rounded-lg">
+                <AlertTriangle className="text-red-600 flex-shrink-0" size={16} />
                 <p className="text-sm font-medium text-red-700">{error}</p>
               </div>
             )}
 
             {success && (
-              <div className="flex items-center gap-3 p-4 bg-emerald-50 border-2 border-emerald-200 rounded-lg">
-                <CheckCircle2 className="text-emerald-600" size={20} />
+              <div className="flex items-center gap-2 p-3 bg-emerald-50 border border-emerald-200 rounded-lg">
+                <CheckCircle2 className="text-emerald-600 flex-shrink-0" size={16} />
                 <p className="text-sm font-medium text-emerald-700">{success}</p>
               </div>
             )}
@@ -865,11 +854,11 @@ const RegistroPsicologo = () => {
             <button 
               type="submit"
               disabled={isLoading || !!success}
-              className="w-full py-3 px-4 bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-semibold rounded-lg shadow-lg hover:from-indigo-700 hover:to-purple-700 disabled:opacity-50 transition-all flex items-center justify-center gap-2"
+              className="w-full py-2.5 px-4 bg-indigo-600 text-white font-medium rounded-lg hover:bg-indigo-700 disabled:opacity-50 transition-all flex items-center justify-center gap-2 text-sm"
             >
               {isLoading ? (
                 <>
-                  <svg className="animate-spin h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                   </svg>
@@ -877,26 +866,26 @@ const RegistroPsicologo = () => {
                 </>
               ) : (
                 <>
-                  <UserPlus size={20} />
+                  <UserPlus size={16} />
                   Criar Conta
                 </>
               )}
             </button>
           </form>
 
-          <div className="mt-8 pt-6 border-t border-slate-200">
-            <p className="text-center text-slate-600 mb-4">Já tem conta?</p>
+          <div className="mt-6 pt-6 border-t border-slate-200 space-y-3">
+            <p className="text-center text-sm text-slate-600">Já tem conta?</p>
             <Link
               to="/login-psicologo"
-              className="w-full py-3 px-4 border-2 border-indigo-600 text-indigo-600 font-semibold rounded-lg hover:bg-indigo-50 transition text-center flex items-center justify-center gap-2"
+              className="w-full py-2.5 px-4 border border-indigo-600 text-indigo-600 font-medium rounded-lg hover:bg-indigo-50 transition text-center flex items-center justify-center gap-2 text-sm"
             >
-              <LogIn size={20} />
+              <LogIn size={16} />
               Entrar
             </Link>
           </div>
 
-          <p className="mt-6 text-center text-sm text-slate-500">
-            <Link to="/" className="text-indigo-600 hover:underline font-medium">← Voltar para Home</Link>
+          <p className="mt-4 text-center text-xs text-slate-500">
+            <Link to="/" className="text-indigo-600 hover:underline">← Voltar</Link>
           </p>
         </div>
       </div>
@@ -982,31 +971,30 @@ const DashboardPsicologo = () => {
   if (isLoading) return <div className="text-center p-8"><Spinner /> Carregando pacientes...</div>;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
-      {/* Header Premium */}
-      <header className="bg-gradient-to-r from-indigo-600 via-indigo-700 to-purple-700 text-white shadow-2xl sticky top-0 z-20">
+    <div className="min-h-screen bg-slate-50">
+      {/* Header */}
+      <header className="bg-white border-b border-slate-200 sticky top-0 z-20 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center gap-3">
-              <div className="p-2 bg-white/20 rounded-lg backdrop-blur">
-                <Brain className="h-6 w-6" />
+              <div className="p-2 bg-indigo-100 rounded-lg">
+                <Brain className="h-6 w-6 text-indigo-600" />
               </div>
               <div>
-                <h1 className="text-xl font-bold">PsiDados</h1>
-                <p className="text-xs text-indigo-100">Bem-estar psicológico</p>
+                <h1 className="text-lg font-bold text-slate-900">PsiDados</h1>
               </div>
             </div>
-            <div className="flex items-center gap-6">
-              <div className="text-right hidden md:block">
-                <p className="text-sm font-semibold">{psicologo?.nome || "Profissional"}</p>
-                <p className="text-xs text-indigo-100">{psicologo?.email}</p>
+            <div className="flex items-center gap-4">
+              <div className="text-right hidden md:block text-sm">
+                <p className="font-medium text-slate-900">{psicologo?.nome || "Profissional"}</p>
+                <p className="text-xs text-slate-500">{psicologo?.email}</p>
               </div>
               <button
                 onClick={() => {
                   localStorage.removeItem('authPsicologo');
                   window.location.href = '/';
                 }}
-                className="px-4 py-2 bg-white/20 hover:bg-white/30 text-white rounded-lg text-sm font-semibold transition backdrop-blur"
+                className="px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-sm font-medium transition"
               >
                 Sair
               </button>
@@ -1016,67 +1004,66 @@ const DashboardPsicologo = () => {
       </header>
 
       {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-12 gap-4">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
           <div>
-            <h2 className="text-4xl font-bold text-slate-900 flex items-center gap-3">
-              <Users className="text-indigo-600" size={32} />
+            <h2 className="text-3xl font-bold text-slate-900 flex items-center gap-2">
+              <Users className="text-indigo-600" size={28} />
               Meus Pacientes
             </h2>
-            <p className="text-slate-600 mt-2">Gerencie seus pacientes e acompanhamentos</p>
+            <p className="text-slate-600 text-sm mt-1">Gerencie seus pacientes</p>
           </div>
           <Link
             to="/psicologo/criar-paciente"
-            className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-indigo-600 to-indigo-700 text-white rounded-lg font-semibold shadow-lg hover:from-indigo-700 hover:to-indigo-800 transition-all hover:shadow-xl"
+            className="flex items-center gap-2 px-4 py-2.5 bg-indigo-600 text-white rounded-lg font-medium hover:bg-indigo-700 transition text-sm"
           >
-            <UserPlus size={20} />
+            <UserPlus size={18} />
             Novo Paciente
           </Link>
         </div>
         
         {error && (
-          <div className="mb-8 bg-red-50 border-2 border-red-200 rounded-xl p-6 flex items-center gap-4">
-            <AlertTriangle className="text-red-600" size={24} />
+          <div className="mb-6 bg-red-50 border border-red-200 rounded-lg p-4 flex items-center gap-3">
+            <AlertTriangle className="text-red-600 flex-shrink-0" size={20} />
             <div>
-              <p className="font-semibold text-red-700">Erro ao carregar pacientes</p>
-              <p className="text-red-600 text-sm mt-1">{error}</p>
+              <p className="font-medium text-red-700 text-sm">Erro ao carregar pacientes</p>
+              <p className="text-red-600 text-xs mt-1">{error}</p>
             </div>
           </div>
         )}
         
         {pacientes.length === 0 && !error ? (
-          <div className="bg-white rounded-2xl shadow-lg p-16 text-center border border-slate-200 hover:shadow-xl transition">
-            <Users className="h-16 w-16 text-slate-300 mx-auto mb-4" />
-            <p className="text-slate-700 text-xl font-semibold mb-2">Nenhum paciente cadastrado</p>
-            <p className="text-slate-500 mb-6">Comece adicionando seu primeiro paciente para acompanhá-lo</p>
+          <div className="bg-white rounded-lg border border-slate-200 p-12 text-center">
+            <Users className="h-12 w-12 text-slate-300 mx-auto mb-3" />
+            <p className="text-slate-700 font-medium mb-2">Nenhum paciente cadastrado</p>
+            <p className="text-slate-500 text-sm mb-4">Comece adicionando seu primeiro paciente</p>
             <Link
               to="/psicologo/criar-paciente"
-              className="inline-flex items-center gap-2 px-6 py-3 bg-indigo-600 text-white rounded-lg font-semibold hover:bg-indigo-700 transition"
+              className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg font-medium hover:bg-indigo-700 transition text-sm"
             >
-              <UserPlus size={18} />
-              Criar Primeiro Paciente
+              <UserPlus size={16} />
+              Criar Paciente
             </Link>
           </div>
         ) : (
-          <div className="grid grid-cols-1 gap-4">
+          <div className="grid grid-cols-1 gap-3">
             {pacientes.map((p) => (
               <div
                 key={p.id}
-                className="bg-white rounded-2xl shadow-lg border border-slate-200 p-6 hover:shadow-xl transition-all group cursor-pointer"
+                className="bg-white rounded-lg border border-slate-200 p-4 hover:border-slate-300 hover:shadow-md transition cursor-pointer"
                 onClick={() => navigate(`/psicologo/paciente/${p.id}/dashboard`)}
               >
-                <div className="flex items-center justify-between gap-6">
+                <div className="flex items-center justify-between gap-4">
                   {/* Avatar + Info */}
-                  <div className="flex items-center gap-4 flex-1 min-w-0">
-                    <div className={`flex-shrink-0 h-14 w-14 rounded-full ${getAvatarColor(p.nome)} flex items-center justify-center shadow-md`}>
-                      <span className={`text-2xl font-bold ${getAvatarTextColor(p.nome)}`}>
+                  <div className="flex items-center gap-3 flex-1 min-w-0">
+                    <div className={`flex-shrink-0 h-12 w-12 rounded-full ${getAvatarColor(p.nome)} flex items-center justify-center`}>
+                      <span className={`font-bold ${getAvatarTextColor(p.nome)}`}>
                         {p.nome.charAt(0).toUpperCase()}
                       </span>
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-lg font-bold text-slate-900 group-hover:text-indigo-600 transition">{p.nome}</p>
-                      <p className="text-sm text-slate-500 truncate">{p.email}</p>
-                      <p className="text-xs text-slate-400 mt-1">Paciente cadastrado</p>
+                      <p className="font-medium text-slate-900">{p.nome}</p>
+                      <p className="text-xs text-slate-500 truncate">{p.email}</p>
                     </div>
                   </div>
 
@@ -1085,25 +1072,25 @@ const DashboardPsicologo = () => {
                     <Link 
                       to={`/psicologo/paciente/${p.id}/dashboard`}
                       onClick={(e) => e.stopPropagation()}
-                      className="px-4 py-2 bg-blue-50 text-blue-600 rounded-lg font-medium hover:bg-blue-100 transition text-sm"
+                      className="px-3 py-1.5 bg-blue-50 text-blue-600 rounded font-medium hover:bg-blue-100 transition text-xs"
                     >
-                      Detalhes
+                      Ver
                     </Link>
                     <Link 
                       to={`/psicologo/paciente/${p.id}/configurar`}
                       onClick={(e) => e.stopPropagation()}
-                      className="px-4 py-2 bg-purple-50 text-purple-600 rounded-lg font-medium hover:bg-purple-100 transition text-sm"
+                      className="px-3 py-1.5 bg-slate-100 text-slate-600 rounded font-medium hover:bg-slate-200 transition text-xs"
                     >
-                      Configurar
+                      Config
                     </Link>
                     <button 
                       onClick={(e) => {
                         e.stopPropagation();
                         handleDelete(p.id);
                       }}
-                      className="px-4 py-2 bg-red-50 text-red-600 rounded-lg font-medium hover:bg-red-100 transition text-sm"
+                      className="px-3 py-1.5 bg-red-50 text-red-600 rounded font-medium hover:bg-red-100 transition text-xs"
                     >
-                      Eliminar
+                      Remover
                     </button>
                   </div>
                 </div>
