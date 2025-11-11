@@ -197,11 +197,54 @@ const buscarRespostasDoPaciente = async (req, res) => {
             return res.status(404).json({ message: "Paciente não encontrado ou não pertence a este psicólogo." });
         }
 
-        // 2. Buscar as respostas (ordenadas pela mais recente)
-        const respostasResult = await db.query(
-            'SELECT * FROM respostas_diarias WHERE paciente_id = $1 ORDER BY data_resposta DESC',
-            [pacienteId]
-        );
+        // 2. Buscar as respostas (ordenadas pela mais recente) e calcular porcentagem
+        const respostasResult = await db.query(`
+            SELECT 
+                id,
+                paciente_id,
+                data_resposta,
+                respostas,
+                respostas->>'questionarioId' as questionario_id,
+                CASE 
+                    WHEN respostas->'respostas' IS NOT NULL THEN
+                        (SELECT COALESCE(SUM((value)::integer), 0)
+                         FROM jsonb_each_text(respostas->'respostas') AS arr(key, value)
+                         WHERE value ~ '^[0-9]+$'
+                        )
+                    ELSE 0 
+                END as pontuacao_total,
+                CASE 
+                    WHEN respostas->>'questionarioId' = 'questionario1' THEN 'GAD-7 (Ansiedade)'
+                    WHEN respostas->>'questionarioId' = 'questionario2' THEN 'PHQ-9 (Depressão)'
+                    WHEN respostas->>'questionarioId' = 'questionario3' THEN 'PANAS (Afeto Positivo e Negativo)'
+                    ELSE 'Questionário'
+                END as questionario_nome,
+                CASE 
+                    WHEN respostas->>'questionarioId' = 'questionario1' THEN 21
+                    WHEN respostas->>'questionarioId' = 'questionario2' THEN 27
+                    WHEN respostas->>'questionarioId' = 'questionario3' THEN 100
+                    ELSE 100
+                END as pontuacao_maxima,
+                ROUND(
+                    CASE 
+                        WHEN respostas->'respostas' IS NOT NULL THEN
+                            (SELECT COALESCE(SUM((value)::integer), 0)
+                             FROM jsonb_each_text(respostas->'respostas') AS arr(key, value)
+                             WHERE value ~ '^[0-9]+$'
+                            )
+                        ELSE 0 
+                    END::numeric * 100.0 /
+                    CASE 
+                        WHEN respostas->>'questionarioId' = 'questionario1' THEN 21
+                        WHEN respostas->>'questionarioId' = 'questionario2' THEN 27
+                        WHEN respostas->>'questionarioId' = 'questionario3' THEN 100
+                        ELSE 100
+                    END, 1
+                ) as percentual
+            FROM respostas_diarias 
+            WHERE paciente_id = $1 
+            ORDER BY data_resposta DESC
+        `, [pacienteId]);
 
         res.status(200).json(respostasResult.rows);
 

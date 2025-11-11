@@ -7,7 +7,8 @@ import {
   Users, LogIn, LogOut, FileText, 
   ChevronRight, Brain, User, KeyRound, ArrowLeft, 
   Settings, Trash2, Edit, UserPlus, Save,
-  BugPlay, AlertCircle, BarChart3, TrendingUp, AlertTriangle, CheckCircle2
+  BugPlay, AlertCircle, BarChart3, TrendingUp, AlertTriangle, CheckCircle2,
+  MoreVertical, Eye
 } from 'lucide-react';
 import TestPanel from './components/TestPanel';
 import { useTestMode } from './contexts/TestModeContext';
@@ -270,29 +271,7 @@ const PsicologoLayout = () => {
 
   return (
     <div className="min-h-screen bg-gray-100">
-      <nav className="bg-white shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between h-16">
-            <Link to="/psicologo/dashboard" className="flex items-center">
-              <Brain className="text-teal-600" />
-              <span className="ml-2 font-bold text-xl text-gray-800">PsiDados</span>
-            </Link>
-            <div className="flex items-center">
-              <span className="text-gray-700 mr-4">
-                Olá, {psicologo.nome}
-              </span>
-              <button
-                onClick={handleLogout}
-                className="flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-md text-red-700 bg-red-100 hover:bg-red-200"
-              >
-                <LogOut className="mr-2 h-4 w-4" />
-                Sair
-              </button>
-            </div>
-          </div>
-        </div>
-      </nav>
-      <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <Outlet />
       </main>
     </div>
@@ -910,6 +889,7 @@ const DashboardPsicologo = () => {
   const [pacientes, setPacientes] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [openMenuId, setOpenMenuId] = useState(null);
   const { psicologo } = useAuth();
   const navigate = useNavigate();
 
@@ -995,7 +975,7 @@ const DashboardPsicologo = () => {
             </div>
             <div className="flex items-center gap-4">
               <div className="text-right hidden md:block text-sm">
-                <p className="font-medium text-slate-900">{psicologo?.nome || "Profissional"}</p>
+                <p className="font-medium text-slate-900">Olá, {psicologo?.nome?.split(' ')[0] || "Profissional"}</p>
                 <p className="text-xs text-slate-500">{psicologo?.email}</p>
               </div>
               <button
@@ -1003,7 +983,7 @@ const DashboardPsicologo = () => {
                   localStorage.removeItem('authPsicologo');
                   window.location.href = '/';
                 }}
-                className="px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-sm font-medium transition"
+                className="px-3 py-2 bg-red-50 hover:bg-red-100 text-red-600 rounded-lg text-sm font-medium transition"
               >
                 Sair
               </button>
@@ -1076,31 +1056,55 @@ const DashboardPsicologo = () => {
                     </div>
                   </div>
 
-                  {/* Ações */}
-                  <div className="flex items-center gap-2 flex-shrink-0">
-                    <Link 
-                      to={`/psicologo/paciente/${p.id}/dashboard`}
-                      onClick={(e) => e.stopPropagation()}
-                      className="px-3 py-1.5 bg-blue-50 text-blue-600 rounded font-medium hover:bg-blue-100 transition text-xs"
-                    >
-                      Ver
-                    </Link>
-                    <Link 
-                      to={`/psicologo/paciente/${p.id}/configurar`}
-                      onClick={(e) => e.stopPropagation()}
-                      className="px-3 py-1.5 bg-slate-100 text-slate-600 rounded font-medium hover:bg-slate-200 transition text-xs"
-                    >
-                      Config
-                    </Link>
-                    <button 
+                  {/* Ações - Menu Dropdown */}
+                  <div className="relative">
+                    <button
                       onClick={(e) => {
                         e.stopPropagation();
-                        handleDelete(p.id);
+                        setOpenMenuId(openMenuId === p.id ? null : p.id);
                       }}
-                      className="px-3 py-1.5 bg-red-50 text-red-600 rounded font-medium hover:bg-red-100 transition text-xs"
+                      className="p-2 hover:bg-slate-100 rounded-lg transition text-slate-600 hover:text-slate-900"
                     >
-                      Remover
+                      <MoreVertical size={18} />
                     </button>
+                    
+                    {openMenuId === p.id && (
+                      <div className="absolute right-0 top-full mt-1 bg-white border border-slate-200 rounded-lg shadow-lg z-10 min-w-40">
+                        <Link 
+                          to={`/psicologo/paciente/${p.id}/dashboard`}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setOpenMenuId(null);
+                          }}
+                          className="flex items-center gap-2 w-full px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 border-b border-slate-100 first:rounded-t-lg"
+                        >
+                          <Eye size={16} />
+                          Ver Detalhes
+                        </Link>
+                        <Link 
+                          to={`/psicologo/paciente/${p.id}/configurar`}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setOpenMenuId(null);
+                          }}
+                          className="flex items-center gap-2 w-full px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 border-b border-slate-100"
+                        >
+                          <Settings size={16} />
+                          Configurar Plano
+                        </Link>
+                        <button 
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setOpenMenuId(null);
+                            handleDelete(p.id);
+                          }}
+                          className="flex items-center gap-2 w-full px-4 py-2 text-sm text-red-600 hover:bg-red-50 rounded-b-lg"
+                        >
+                          <Trash2 size={16} />
+                          Remover
+                        </button>
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
@@ -1183,13 +1187,25 @@ const PacienteDashboard = () => {
     navigate(`/psicologo/paciente/${pacienteId}/configurar`);
   };
 
-  const handleDesvincularPaciente = () => {
+  const handleDesvincularPaciente = async () => {
     if (window.confirm('Tem certeza que deseja desvincular este paciente? Esta ação é irreversível.')) {
-      // TODO: Implementar desvinculação no backend
-      setSuccess('Paciente desvinculado com sucesso.');
-      setTimeout(() => {
-        navigate('/psicologo/dashboard');
-      }, 1500);
+      try {
+        const response = await fetch(`/api/pacientes/${pacienteId}`, {
+          method: 'DELETE',
+          headers: { 'Authorization': `Bearer ${psicologo.token}` },
+        });
+        const { data } = await safeParseResponse(response);
+        if (!response.ok) {
+          throw new Error(data.message || 'Erro ao desvincular paciente.');
+        }
+        
+        setSuccess('Paciente desvinculado com sucesso.');
+        setTimeout(() => {
+          navigate('/psicologo/dashboard');
+        }, 1500);
+      } catch (err) {
+        setError(err.message);
+      }
     }
   };
 
@@ -1356,8 +1372,8 @@ const PacienteDashboard = () => {
                         <p className="text-sm text-gray-500 mt-1">{new Date(r.data_resposta).toLocaleDateString('pt-BR')}</p>
                       </div>
                       <div className="text-right">
-                        <p className="text-2xl font-bold text-indigo-600">{r.pontuacao_total || 0}</p>
-                        <p className="text-xs text-gray-500">pontos</p>
+                        <p className="text-2xl font-bold text-indigo-600">{r.percentual || 0}%</p>
+                        <p className="text-xs text-gray-500">conclusão</p>
                       </div>
                     </div>
                   </div>

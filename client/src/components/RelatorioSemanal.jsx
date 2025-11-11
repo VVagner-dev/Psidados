@@ -398,6 +398,49 @@ export default function RelatorioSemanal({ pacienteId, token, onVoltar }) {
           </div>
         </div>
 
+        {/* Resumo Individual de Cada Questionário */}
+        <div className="space-y-4">
+          <h2 className="font-bold text-slate-900 flex items-center gap-2">
+            <div className="p-2 bg-purple-100 rounded-lg">
+              <FileText className="text-purple-600" size={18} />
+            </div>
+            Análise Individual dos Questionários
+          </h2>
+          
+          <div className="grid grid-cols-1 gap-4">
+            {relatorio.questionarios.map((q, idx) => (
+              <div key={idx} className="bg-white rounded-lg border border-slate-200 p-6 hover:shadow-lg transition">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="w-4 h-4 rounded-full" style={{ backgroundColor: q.cor }}></div>
+                  <h3 className="font-bold text-slate-900">{q.titulo}</h3>
+                  <span className="ml-auto text-xs font-medium px-3 py-1 rounded-full" style={{ backgroundColor: q.cor + '20', color: q.cor }}>
+                    {q.severidade}
+                  </span>
+                </div>
+                
+                <div className="bg-slate-50 p-4 rounded-lg border-l-4 mb-4" style={{ borderColor: q.cor }}>
+                  <p className="text-slate-800 leading-relaxed text-sm">
+                    {q.analise || `Sua pontuação neste questionário foi de ${q.score_atual} de ${q.max_possivel} pontos, correspondendo a ${q.percentual}% de conclusão. Este resultado indica ${q.severidade.toLowerCase()} nesta área de avaliação.`}
+                  </p>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4 text-sm">
+                  <div>
+                    <p className="text-slate-600 font-medium mb-1">Status Atual</p>
+                    <p className="text-lg font-bold" style={{ color: q.cor }}>{q.score_atual}/{q.max_possivel}</p>
+                  </div>
+                  <div>
+                    <p className="text-slate-600 font-medium mb-1">Tendência</p>
+                    <p className="text-xs text-slate-600">
+                      {q.score_atual > q.score_medio ? '📈 Acima da média' : q.score_atual < q.score_medio ? '📉 Abaixo da média' : '➡️ Dentro da média'}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
         {/* Footer */}
         <div className="border-t border-slate-200 pt-6 text-center text-slate-600 text-sm">
           <p className="font-medium">📊 Relatório de {new Date(relatorio.data_geracao).toLocaleDateString('pt-BR')}</p>
