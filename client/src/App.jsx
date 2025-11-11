@@ -372,63 +372,72 @@ const Home = () => {
   const { isTestMode, toggleTestMode } = useTestMode();
 
   return (
-    <div className="min-h-screen bg-gray-100 flex items-center justify-center">
-      <div className="text-center p-10 bg-white rounded-lg shadow-xl">
-        <Brain className="mx-auto h-16 w-16 text-teal-600" />
-        <h1 className="mt-4 text-4xl font-bold text-gray-900">
-          Bem-vindo ao PsiDados
-        </h1>
-        <p className="mt-2 text-lg text-gray-600">
-          A ponte inteligente entre psicólogos e pacientes.
-        </p>
-        <div className="mt-8 flex flex-col sm:flex-row justify-center gap-4">
-          <Link
-            to="/login-psicologo"
-            className="flex items-center justify-center px-6 py-3 bg-teal-600 text-white rounded-md font-semibold shadow-lg hover:bg-teal-700 transition duration-300"
-          >
-            <User className="mr-2" />
-            Portal do Psicólogo
-          </Link>
-          <Link
-            to="/login-paciente"
-            className="flex items-center justify-center px-6 py-3 bg-gray-700 text-white rounded-md font-semibold shadow-lg hover:bg-gray-800 transition duration-300"
-          >
-            <KeyRound className="mr-2" />
-            Portal do Paciente
-          </Link>
-        </div>
-        <div className="mt-6">
-          <Link
-            to="/registrar-psicologo"
-            className="text-sm text-teal-600 hover:underline"
-          >
-            É psicólogo? Crie sua conta
-          </Link>
-        </div>
-        {process.env.NODE_ENV === 'development' && (
-          <div className="mt-6 pt-6 border-t">
-            <button
-              onClick={toggleTestMode}
-              className={`flex items-center justify-center px-4 py-2 rounded-md text-sm font-medium transition duration-300 ${
-                isTestMode
-                  ? 'bg-yellow-100 text-yellow-800 hover:bg-yellow-200'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-              }`}
-            >
-              {isTestMode ? (
-                <>
-                  <AlertCircle className="w-4 h-4 mr-2" />
-                  Modo de Teste Ativo
-                </>
-              ) : (
-                <>
-                  <BugPlay className="w-4 h-4 mr-2" />
-                  Ativar Modo de Teste
-                </>
-              )}
-            </button>
+    <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
+      <div className="w-full max-w-md">
+        <div className="bg-white rounded-xl shadow-md p-8 border border-slate-200">
+          <div className="text-center mb-8">
+            <div className="inline-flex items-center justify-center w-14 h-14 bg-indigo-100 rounded-xl mb-4">
+              <Brain className="h-7 w-7 text-indigo-600" />
+            </div>
+            <h1 className="text-3xl font-bold text-slate-900 mt-4">
+              PsiDados
+            </h1>
+            <p className="text-slate-600 text-sm mt-2">
+              A ponte inteligente entre psicólogos e pacientes
+            </p>
           </div>
-        )}
+
+          <div className="space-y-3 mb-6">
+            <Link
+              to="/login-psicologo"
+              className="flex items-center justify-center px-4 py-2.5 bg-indigo-600 text-white rounded-lg font-medium hover:bg-indigo-700 transition duration-200 text-sm"
+            >
+              <Brain className="mr-2 h-4 w-4" />
+              Portal do Psicólogo
+            </Link>
+            <Link
+              to="/login-paciente"
+              className="flex items-center justify-center px-4 py-2.5 bg-emerald-600 text-white rounded-lg font-medium hover:bg-emerald-700 transition duration-200 text-sm"
+            >
+              <KeyRound className="mr-2 h-4 w-4" />
+              Portal do Paciente
+            </Link>
+          </div>
+
+          <div className="text-center border-t border-slate-200 pt-4">
+            <Link
+              to="/registrar-psicologo"
+              className="text-sm text-indigo-600 hover:text-indigo-700 font-medium transition"
+            >
+              Criar conta de psicólogo
+            </Link>
+          </div>
+
+          {process.env.NODE_ENV === 'development' && (
+            <div className="mt-6 pt-6 border-t border-slate-200">
+              <button
+                onClick={toggleTestMode}
+                className={`w-full flex items-center justify-center px-3 py-2 rounded-lg text-sm font-medium transition duration-200 ${
+                  isTestMode
+                    ? 'bg-amber-100 text-amber-800 hover:bg-amber-200'
+                    : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                }`}
+              >
+                {isTestMode ? (
+                  <>
+                    <AlertCircle className="w-4 h-4 mr-2" />
+                    Modo de Teste Ativo
+                  </>
+                ) : (
+                  <>
+                    <BugPlay className="w-4 h-4 mr-2" />
+                    Ativar Modo de Teste
+                  </>
+                )}
+              </button>
+            </div>
+          )}
+        </div>
       </div>
       <TestPanel />
     </div>
