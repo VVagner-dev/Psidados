@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar } from 'recharts';
-import { Download, Loader } from 'lucide-react';
+import { Download, Loader, FileDown } from 'lucide-react';
+import html2pdf from 'html2pdf.js';
 
 export default function RelatorioSemanal({ pacienteId, token }) {
   const [relatorio, setRelatorio] = useState(null);
@@ -8,6 +9,7 @@ export default function RelatorioSemanal({ pacienteId, token }) {
   const [loading, setLoading] = useState(true);
   const [gerando, setGerando] = useState(false);
   const [erro, setErro] = useState(null);
+  const relatorioRef = useRef(null);
 
   // Buscar relatório ao montar componente
   useEffect(() => {
@@ -78,28 +80,24 @@ export default function RelatorioSemanal({ pacienteId, token }) {
     }
   };
 
-  const exportarPDF = () => {
-    const conteudo = document.getElementById('relatorio-completo');
-    if (!conteudo) return;
+  const exportarPDF = async () => {
+    if (!relatorioRef.current) return;
 
-    const janela = window.open('', '', 'width=900,height=1000');
-    janela.document.write(`
-      <html>
-      <head>
-        <title>Relatório Semanal</title>
-        <style>
-          body { font-family: Arial, sans-serif; margin: 20px; }
-          h1, h2 { color: #1f2937; }
-          .card { border: 1px solid #e5e7eb; padding: 20px; margin: 20px 0; border-radius: 8px; }
-          .score-box { background: #f3f4f6; padding: 15px; margin: 10px 0; border-left: 4px solid #3b82f6; }
-          .analise { background: #f0fdf4; padding: 20px; margin: 20px 0; border-radius: 8px; }
-        </style>
-      </head>
-      <body>${conteudo.innerHTML}</body>
-      </html>
-    `);
-    janela.document.close();
-    janela.print();
+    try {
+      const element = relatorioRef.current;
+      const opt = {
+        margin: 10,
+        filename: `Relatorio_Semanal_${new Date().toISOString().split('T')[0]}.pdf`,
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { scale: 2 },
+        jsPDF: { orientation: 'portrait', unit: 'mm', format: 'a4' }
+      };
+
+      html2pdf().set(opt).from(element).save();
+    } catch (error) {
+      console.error('Erro ao gerar PDF:', error);
+      setErro('Erro ao exportar PDF');
+    }
   };
 
   if (loading) {
@@ -151,57 +149,70 @@ export default function RelatorioSemanal({ pacienteId, token }) {
   }));
 
   return (
-    <div id="relatorio-completo" className="space-y-6 pb-8">
-      {/* Cabeçalho */}
-      <div className="bg-gradient-to-r from-teal-500 to-teal-600 text-white rounded-lg p-6">
-        <h1 className="text-3xl font-bold mb-2">Relatório Semanal</h1>
-        <p className="text-teal-100">
-          {new Date(relatorio.data_geracao).toLocaleDateString('pt-BR', {
-            weekday: 'long',
-            year: 'numeric',
-            month: 'long',
-            day: 'numeric'
-          })}
-        </p>
+    <div ref={relatorioRef} id="relatorio-completo" className="space-y-8 pb-12 bg-white">
+      {/* Cabeçalho Premium */}
+      <div className="bg-gradient-to-br from-teal-500 via-teal-600 to-cyan-600 text-white rounded-lg p-8 shadow-lg">
+        <div className="flex justify-between items-start">
+          <div>
+            <h1 className="text-4xl font-bold mb-2">📋 Relatório Semanal</h1>
+            <p className="text-teal-100 text-lg">Análise de bem-estar e saúde mental</p>
+          </div>
+          <div className="text-right bg-white/20 rounded-lg p-4">
+            <p className="text-teal-100 text-sm mb-1">Semana de:</p>
+            <p className="text-white font-semibold">
+              {new Date(relatorio.data_geracao).toLocaleDateString('pt-BR', {
+                month: '2-digit',
+                day: '2-digit',
+                year: 'numeric'
+              })}
+            </p>
+          </div>
+        </div>
       </div>
 
       {/* Botões de Ação */}
-      <div className="flex gap-3 flex-wrap">
+      <div className="flex gap-3 flex-wrap sticky top-0 bg-white py-4 z-10">
         <button
           onClick={gerarAnaliseIA}
           disabled={gerando}
-          className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-400 flex items-center gap-2"
+          className="px-5 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-400 flex items-center gap-2 font-medium transition"
         >
           {gerando && <Loader className="animate-spin" size={18} />}
-          {gerando ? 'Gerando...' : 'Gerar Análise com IA'}
+          {gerando ? 'Gerando...' : '🤖 Gerar Análise com IA'}
         </button>
         <button
           onClick={exportarPDF}
-          className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 flex items-center gap-2"
+          className="px-5 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 flex items-center gap-2 font-medium transition"
         >
-          <Download size={18} />
-          Exportar PDF
+          <FileDown size={18} />
+          📥 Baixar PDF
         </button>
         <button
           onClick={carregarRelatorio}
-          className="px-4 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400"
+          className="px-5 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 font-medium transition"
         >
-          Atualizar
+          🔄 Atualizar
         </button>
       </div>
 
       {/* Resumo da Semana */}
       {relatorio.resumo_semanal && (
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-6">
-          <h2 className="text-xl font-bold text-blue-900 mb-4">📝 Resumo da Semana</h2>
-          <div className="space-y-4">
+        <div className="bg-gradient-to-br from-blue-50 to-cyan-50 border-2 border-blue-200 rounded-lg p-8">
+          <h2 className="text-2xl font-bold text-blue-900 mb-6 flex items-center gap-2">
+            📝 <span>Resumo da Semana</span>
+          </h2>
+          <div className="space-y-6">
             <div>
-              <h3 className="font-semibold text-blue-800 mb-2">Como você descreveria a semana?</h3>
-              <p className="text-gray-700 whitespace-pre-wrap">{relatorio.resumo_semanal.texto_resumo}</p>
+              <h3 className="font-bold text-blue-800 mb-3 text-lg">Como você descreveria a semana que passou?</h3>
+              <p className="text-gray-700 leading-relaxed bg-white p-4 rounded border-l-4 border-blue-400">
+                {relatorio.resumo_semanal.texto_resumo}
+              </p>
             </div>
             <div>
-              <h3 className="font-semibold text-blue-800 mb-2">Expectativas para próxima semana:</h3>
-              <p className="text-gray-700 whitespace-pre-wrap">{relatorio.resumo_semanal.texto_expectativa}</p>
+              <h3 className="font-bold text-blue-800 mb-3 text-lg">Expectativas para próxima semana</h3>
+              <p className="text-gray-700 leading-relaxed bg-white p-4 rounded border-l-4 border-blue-400">
+                {relatorio.resumo_semanal.texto_expectativa}
+              </p>
             </div>
           </div>
         </div>
@@ -209,27 +220,55 @@ export default function RelatorioSemanal({ pacienteId, token }) {
 
       {/* Scores e Pontuações */}
       <div>
-        <h2 className="text-2xl font-bold mb-4">📊 Scores da Semana</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
+        <h2 className="text-3xl font-bold mb-6 flex items-center gap-2 text-gray-800">
+          📊 <span>Scores da Semana</span>
+        </h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
           {relatorio.questionarios.map((q, idx) => (
-            <div key={idx} className="bg-white border-2 rounded-lg p-5" style={{ borderColor: q.cor }}>
-              <h3 className="font-bold text-lg mb-3">{q.titulo.split('(')[0].trim()}</h3>
-              <div className="space-y-2">
-                <div>
-                  <p className="text-sm text-gray-600">Score Atual</p>
-                  <p className="text-3xl font-bold" style={{ color: q.cor }}>
-                    {q.score_atual}/{q.max_possivel}
+            <div 
+              key={idx} 
+              className="bg-white border-4 rounded-lg p-6 shadow-md hover:shadow-lg transition"
+              style={{ borderColor: q.cor }}
+            >
+              <div className="flex justify-between items-start mb-4">
+                <h3 className="font-bold text-lg text-gray-800">{q.titulo.split('(')[0].trim()}</h3>
+                <div 
+                  className="w-12 h-12 rounded-full flex items-center justify-center text-white font-bold text-lg"
+                  style={{ backgroundColor: q.cor }}
+                >
+                  {q.percentual}%
+                </div>
+              </div>
+              
+              <div className="space-y-4">
+                <div className="bg-gradient-to-r from-gray-50 to-gray-100 rounded-lg p-4">
+                  <p className="text-xs text-gray-600 font-semibold mb-1 uppercase">Score Atual</p>
+                  <p className="text-4xl font-bold" style={{ color: q.cor }}>
+                    {q.score_atual}
                   </p>
-                  <p className="text-xs text-gray-500">{q.percentual}%</p>
+                  <p className="text-xs text-gray-500 mt-1">máximo: {q.max_possivel}</p>
                 </div>
-                <div className="bg-gray-50 rounded p-2">
-                  <p className="text-xs text-gray-600">Severidade</p>
-                  <p className="font-semibold" style={{ color: q.cor }}>{q.severidade}</p>
+
+                <div className="bg-white border rounded-lg p-3">
+                  <p className="text-xs text-gray-600 font-semibold mb-1 uppercase">Severidade</p>
+                  <p className="font-bold text-lg" style={{ color: q.cor }}>
+                    {q.severidade}
+                  </p>
                 </div>
-                <div className="text-xs text-gray-600 space-y-1">
-                  <p>📈 Média: {q.score_medio}</p>
-                  <p>🔝 Máxima: {q.score_maximo}</p>
-                  <p>🔽 Mínima: {q.score_minimo}</p>
+
+                <div className="grid grid-cols-3 gap-2 text-center">
+                  <div className="bg-blue-50 rounded p-2">
+                    <p className="text-xs text-gray-600">Média</p>
+                    <p className="font-bold text-blue-600">{q.score_medio}</p>
+                  </div>
+                  <div className="bg-green-50 rounded p-2">
+                    <p className="text-xs text-gray-600">Máxima</p>
+                    <p className="font-bold text-green-600">{q.score_maximo}</p>
+                  </div>
+                  <div className="bg-red-50 rounded p-2">
+                    <p className="text-xs text-gray-600">Mínima</p>
+                    <p className="font-bold text-red-600">{q.score_minimo}</p>
+                  </div>
                 </div>
               </div>
             </div>
@@ -238,50 +277,80 @@ export default function RelatorioSemanal({ pacienteId, token }) {
       </div>
 
       {/* Gráfico de Barras */}
-      <div className="bg-white border rounded-lg p-6">
-        <h2 className="text-xl font-bold mb-4">📈 Comparação de Scores</h2>
-        <ResponsiveContainer width="100%" height={300}>
-          <BarChart data={dadosGrafico}>
-            <CartesianGrid strokeDasharray="3 3" />
-            <XAxis dataKey="nome" />
-            <YAxis />
-            <Tooltip />
-            <Legend />
-            <Bar dataKey="score" fill="#3b82f6" name="Score Atual" />
-            <Bar dataKey="media" fill="#10b981" name="Média Semanal" />
-          </BarChart>
-        </ResponsiveContainer>
+      <div className="bg-white border-2 border-gray-200 rounded-lg p-8 shadow-md">
+        <h2 className="text-2xl font-bold mb-6 text-gray-800 flex items-center gap-2">
+          📈 <span>Comparação de Scores</span>
+        </h2>
+        <div className="w-full h-80 bg-gray-50 rounded p-4">
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart data={relatorio.questionarios.map(q => ({
+              nome: q.titulo.split('(')[0].trim(),
+              score: q.score_atual,
+              media: q.score_medio
+            }))}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+              <XAxis dataKey="nome" />
+              <YAxis />
+              <Tooltip 
+                contentStyle={{ backgroundColor: '#f9fafb', border: '1px solid #e5e7eb', borderRadius: '8px' }}
+              />
+              <Legend />
+              <Bar dataKey="score" fill="#3b82f6" name="Score Atual" radius={[8, 8, 0, 0]} />
+              <Bar dataKey="media" fill="#10b981" name="Média Semanal" radius={[8, 8, 0, 0]} />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
       </div>
 
       {/* Gráfico Radar */}
-      <div className="bg-white border rounded-lg p-6">
-        <h2 className="text-xl font-bold mb-4">🎯 Percentual de Severidade</h2>
-        <ResponsiveContainer width="100%" height={300}>
-          <RadarChart data={dadosRadar}>
-            <PolarGrid />
-            <PolarAngleAxis dataKey="nome" />
-            <PolarRadiusAxis angle={90} domain={[0, 100]} />
-            <Radar name="Percentual" dataKey="valor" stroke="#8b5cf6" fill="#8b5cf6" fillOpacity={0.6} />
-            <Tooltip />
-          </RadarChart>
-        </ResponsiveContainer>
+      <div className="bg-white border-2 border-gray-200 rounded-lg p-8 shadow-md">
+        <h2 className="text-2xl font-bold mb-6 text-gray-800 flex items-center gap-2">
+          🎯 <span>Percentual de Severidade</span>
+        </h2>
+        <div className="w-full h-80 bg-gray-50 rounded p-4">
+          <ResponsiveContainer width="100%" height="100%">
+            <RadarChart data={relatorio.questionarios.map(q => ({
+              nome: q.titulo.split('(')[0].trim(),
+              valor: q.percentual
+            }))}>
+              <PolarGrid stroke="#e5e7eb" />
+              <PolarAngleAxis dataKey="nome" />
+              <PolarRadiusAxis angle={90} domain={[0, 100]} />
+              <Radar name="Percentual" dataKey="valor" stroke="#8b5cf6" fill="#8b5cf6" fillOpacity={0.6} />
+              <Tooltip 
+                contentStyle={{ backgroundColor: '#f9fafb', border: '1px solid #e5e7eb', borderRadius: '8px' }}
+              />
+            </RadarChart>
+          </ResponsiveContainer>
+        </div>
       </div>
 
       {/* Análise com IA */}
       {analiseIA && (
-        <div className="bg-green-50 border border-green-200 rounded-lg p-6">
-          <h2 className="text-xl font-bold text-green-900 mb-4">🤖 Análise Inteligente</h2>
-          <div className="text-gray-700 space-y-3 whitespace-pre-wrap">
+        <div className="bg-gradient-to-br from-emerald-50 to-green-50 border-2 border-green-300 rounded-lg p-8 shadow-md">
+          <h2 className="text-2xl font-bold text-green-900 mb-6 flex items-center gap-2">
+            🤖 <span>Análise Inteligente</span>
+          </h2>
+          <div className="bg-white rounded-lg p-6 text-gray-700 leading-relaxed whitespace-pre-wrap">
             {analiseIA}
           </div>
         </div>
       )}
 
       {!analiseIA && (
-        <div className="bg-gray-50 border border-gray-200 rounded-lg p-6 text-center">
-          <p className="text-gray-600 mb-4">Clique em "Gerar Análise com IA" para receber uma análise personalizada baseada em seus dados.</p>
+        <div className="bg-gradient-to-br from-gray-50 to-gray-100 border-2 border-gray-300 rounded-lg p-8 text-center shadow-md">
+          <p className="text-gray-700 mb-4 text-lg font-medium">
+            ⚠️ Clique em "Gerar Análise com IA" para receber uma análise personalizada
+          </p>
+          <p className="text-gray-600">baseada em seus dados e contexto semanal.</p>
         </div>
       )}
+
+      {/* Rodapé */}
+      <div className="border-t-2 border-gray-300 pt-6 mt-8 text-center text-sm text-gray-600">
+        <p>Relatório gerado automaticamente em {new Date(relatorio.data_geracao).toLocaleString('pt-BR')}</p>
+        <p className="mt-2 text-xs">© PsiDados - Sistema de Acompanhamento Psicológico</p>
+      </div>
     </div>
   );
 }
