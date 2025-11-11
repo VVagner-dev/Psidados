@@ -717,9 +717,9 @@ const LoginPaciente = () => {
                     [{info.timestamp.split('T')[1].split('.')[0]}] {info.message}
                   </div>
                 ))}
+              </div>
             </div>
-          </div>
-        )}
+          )}
       </div>
     </div>
   );
