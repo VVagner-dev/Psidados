@@ -242,7 +242,14 @@ const obterRelatorioSemanal = async (req, res) => {
     );
     
     if (resumoResult.rows.length > 0) {
-      relatorio.resumo_semanal = resumoResult.rows[0];
+      const resumoRow = resumoResult.rows[0];
+      relatorio.resumo_semanal = {
+        ...resumoRow,
+        // Garantir que analises_questionarios é um objeto, não string
+        analises_questionarios: typeof resumoRow.analises_questionarios === 'string' 
+          ? JSON.parse(resumoRow.analises_questionarios || '{}')
+          : (resumoRow.analises_questionarios || {})
+      };
     }
     
     return res.json(relatorio);

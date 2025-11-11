@@ -76,14 +76,17 @@ CREATE TABLE respostas_diarias (
 );
 
 -- Tabela 5: resumos_semanais
--- Armazena o resumo do final da semana e a análise da IA.
+-- Armazena o resumo do final da semana e as análises da IA separadas.
 CREATE TABLE resumos_semanais (
     id SERIAL PRIMARY KEY,
     paciente_id INTEGER NOT NULL,
     data_fim_semana DATE NOT NULL,
     texto_resumo TEXT NOT NULL,      -- "Como você descreveria a semana que passou?"
     texto_expectativa TEXT NOT NULL, -- "Quais são suas expectativas para a próxima?"
-    analise_ia TEXT,                 -- O texto que será gerado pelo Gemini (inicialmente NULO)
+    analise_ia TEXT,                 -- Retrocompatibilidade: análise geral
+    resumo_geral TEXT,               -- Novo: Resumo Geral da Semana (IA)
+    analise_pontos TEXT,             -- Novo: Análise e Pontos de Atenção (IA)
+    analises_questionarios JSONB,    -- Novo: Análises individuais por questionário {questionario1: "...", questionario2: "...", ...}
     
     CONSTRAINT fk_paciente
         FOREIGN KEY(paciente_id)

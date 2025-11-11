@@ -224,14 +224,9 @@ async function obterDadosQuestionariosSemana(pacienteId) {
 // -----------------------------------------------------------------
 
 /**
- * Chama a API do Gemini para analisar o texto do paciente com contexto dos questionários.
- * @param {string} textoResumo - O resumo da semana do paciente.
- * @param {string} textoExpectativa - A expectativa do paciente para a próxima semana.
- * @param {object} questionariosDados - Dados dos questionários (scores, severidades).
- * @returns {Promise<string>} - A análise gerada pela IA.
+ * Chama a API do Gemini com um prompt específico
  */
-async function analisarResumoComIA(textoResumo, textoExpectativa, questionariosDados = {}) {
-    // 1. Obter a Chave da API do .env
+async function chamarGemini(userPrompt, systemPrompt) {
     const GEMINI_API_KEY = process.env.GOOGLE_AI_API_KEY;
     if (!GEMINI_API_KEY) {
         console.error("[IA] Erro: GOOGLE_AI_API_KEY não encontrada no ficheiro .env");
@@ -240,51 +235,6 @@ async function analisarResumoComIA(textoResumo, textoExpectativa, questionariosD
 
     const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${GEMINI_API_KEY}`;
 
-    // 2. O Prompt (construir com dados dos questionários)
-    const systemPrompt = `
-        Aja como um assistente de psicologia. 
-        Você receberá:
-        - Dados de questionários de saúde mental (PHQ-9 para depressão, GAD-7 para ansiedade, PANAS para afeto)
-        - Um resumo da semana que passou do paciente
-        - Expectativas do paciente para a próxima semana
-        
-        A sua tarefa é gerar uma análise profissional e empática (2-3 parágrafos) para o psicólogo deste paciente.
-        
-        O que analisar:
-        - Os scores dos questionários e suas severidades
-        - Correlações entre os dados dos questionários (ex: alta ansiedade + baixo afeto)
-        - O sentimento principal do resumo semanal
-        - Temas-chave mencionados pelo paciente
-        - Congruência entre os scores e o relato escrito (se há desconexão)
-        - Se a expectativa para a próxima semana é realista dado o contexto
-        
-        Responda em português do Brasil, num tom profissional mas empático, como se fosse para um psicólogo ler.
-    `;
-
-    // 3. Construir o texto do utilizador com dados dos questionários
-    let userPrompt = ``;
-    
-    if (Object.keys(questionariosDados).length > 0) {
-        userPrompt += `**Dados dos Questionários desta Semana:**\n`;
-        for (const [key, dados] of Object.entries(questionariosDados)) {
-            userPrompt += `
-- ${dados.titulo}: Score ${dados.score_atual}/${dados.max_possivel} (${dados.severidade})
-  - Score médio da semana: ${dados.score_medio}
-  - Variação: ${dados.score_minimo} a ${dados.score_maximo}
-`;
-        }
-        userPrompt += `\n`;
-    }
-    
-    userPrompt += `**Resumo da Semana:**
-"${textoResumo}"
-
-**Expectativa para a Próxima Semana:**
-"${textoExpectativa}"`;
-
-    console.log(`[IA] Preparando análise com dados de ${Object.keys(questionariosDados).length} questionários`);
-
-    // 4. Montar a Requisição
     const payload = {
         contents: [
             {
@@ -301,7 +251,6 @@ async function analisarResumoComIA(textoResumo, textoExpectativa, questionariosD
         }
     };
 
-    // 5. Chamar a API
     try {
         const response = await fetch(API_URL, {
             method: 'POST',
@@ -317,18 +266,146 @@ async function analisarResumoComIA(textoResumo, textoExpectativa, questionariosD
 
         const result = await response.json();
 
-        // 6. Extrair o texto da resposta da IA
         if (!result.candidates || result.candidates.length === 0 || !result.candidates[0].content?.parts?.[0]?.text) {
             console.error("[IA] Erro: A resposta do Gemini veio vazia ou em formato inesperado.", JSON.stringify(result, null, 2));
             return null;
         }
         
-        const analise = result.candidates[0].content.parts[0].text;
-        console.log(`[IA] ✅ Análise gerada com sucesso (${analise.length} caracteres)`);
-        return analise.trim();
+        return result.candidates[0].content.parts[0].text.trim();
 
     } catch (error) {
-        console.error("Erro ao chamar a função analisarResumoComIA:", error.message);
+        console.error("Erro ao chamar Gemini:", error.message);
+        return null;
+    }
+}
+
+/**
+ * Gera Resumo Geral da Semana
+ */
+async function gerarResumoGeral(textoResumo, textoExpectativa, questionariosDados = {}) {
+    const systemPrompt = `
+        Você é um assistente de psicologia especializado em síntese e análise.
+        Sua tarefa é gerar um RESUMO GERAL DA SEMANA (máximo 2 parágrafos) que responda a:
+        - O que o paciente relatou que respondeu/fez durante a semana
+        - Quais foram suas expectativas para a próxima semana
+        - Contexto geral: dados dos questionários (scores, tendências)
+        
+        Seja conciso, profissional e empático. Escreva em português do Brasil.
+    `;
+
+    let userPrompt = `Dados dos Questionários:\n`;
+    for (const [key, dados] of Object.entries(questionariosDados)) {
+        userPrompt += `- ${dados.titulo}: ${dados.score_atual}/${dados.max_possivel} (${dados.severidade})\n`;
+    }
+
+    userPrompt += `\nResumo do Paciente: "${textoResumo}"\n`;
+    userPrompt += `Expectativa do Paciente: "${textoExpectativa}"\n\n`;
+    userPrompt += `Gere um resumo geral da semana com base nesses dados.`;
+
+    return await chamarGemini(userPrompt, systemPrompt);
+}
+
+/**
+ * Gera Análise e Pontos de Atenção
+ */
+async function gerarAnaliseEpontos(textoResumo, textoExpectativa, questionariosDados = {}) {
+    const systemPrompt = `
+        Você é um psicólogo experiente analisando dados de bem-estar mental.
+        Sua tarefa é gerar uma ANÁLISE E PONTOS DE ATENÇÃO (2-3 parágrafos) que incluam:
+        - Correlações entre os scores (ex: depressão + ansiedade + afeto)
+        - Tendências observadas (melhora, piora, estabilidade)
+        - Congruência entre relato verbal e scores
+        - Pontos críticos ou de preocupação
+        - Recomendações e sugestões
+        
+        Seja analítico, empático e prático. Escreva em português do Brasil como se fosse para orientar o psicólogo.
+    `;
+
+    let userPrompt = `Dados dos Questionários:\n`;
+    for (const [key, dados] of Object.entries(questionariosDados)) {
+        userPrompt += `- ${dados.titulo}: Score ${dados.score_atual}/${dados.max_possivel} (${dados.severidade})\n`;
+        userPrompt += `  Médio: ${dados.score_medio}, Variação: ${dados.score_minimo}-${dados.score_maximo}\n`;
+    }
+
+    userPrompt += `\nResumo do Paciente: "${textoResumo}"\n`;
+    userPrompt += `Expectativa: "${textoExpectativa}"\n\n`;
+    userPrompt += `Gere uma análise profunda com pontos de atenção.`;
+
+    return await chamarGemini(userPrompt, systemPrompt);
+}
+
+/**
+ * Gera Análise Individual para um Questionário
+ */
+async function gerarAnaliseQuestionario(questionarioTitulo, score, maxScore, severidade, scoreMedio, scoreMinimo, scoreMaximo) {
+    const systemPrompt = `
+        Você é um especialista em avaliação psicológica.
+        Sua tarefa é gerar uma ANÁLISE INDIVIDUAL (1-2 parágrafos) de UM questionário específico que inclua:
+        - Interpretação do score atual em contexto clínico
+        - Comparação com a média da semana
+        - Tendência (melhora, piora, estável)
+        - Significado clínico da severidade
+        - Sugestões ou observações relevantes
+        
+        Seja direto, profissional e orientado para ação. Escreva em português do Brasil.
+    `;
+
+    const userPrompt = `Questionário: ${questionarioTitulo}
+Score Atual: ${score}/${maxScore}
+Severidade: ${severidade}
+Score Médio da Semana: ${scoreMedio}
+Mínimo: ${scoreMinimo}, Máximo: ${scoreMaximo}
+
+Gere uma análise individual detalhada deste questionário.`;
+
+    return await chamarGemini(userPrompt, systemPrompt);
+}
+
+/**
+ * Chama a API do Gemini para analisar o texto do paciente com contexto dos questionários.
+ * @param {string} textoResumo - O resumo da semana do paciente.
+ * @param {string} textoExpectativa - A expectativa do paciente para a próxima semana.
+ * @param {object} questionariosDados - Dados dos questionários (scores, severidades).
+ * @returns {Promise<object>} - Objeto com análise_geral, análise_pontos, e analises_questionarios.
+ */
+async function analisarResumoComIA(textoResumo, textoExpectativa, questionariosDados = {}) {
+    console.log(`[IA] Iniciando análise com IA...`);
+
+    try {
+        // Gerar três análises em paralelo
+        const [resumoGeral, analiseEpontos, ...analisesQuestionarios] = await Promise.all([
+            gerarResumoGeral(textoResumo, textoExpectativa, questionariosDados),
+            gerarAnaliseEpontos(textoResumo, textoExpectativa, questionariosDados),
+            ...Object.entries(questionariosDados).map(([key, dados]) =>
+                gerarAnaliseQuestionario(
+                    dados.titulo,
+                    dados.score_atual,
+                    dados.max_possivel,
+                    dados.severidade,
+                    dados.score_medio,
+                    dados.score_minimo,
+                    dados.score_maximo
+                )
+            )
+        ]);
+
+        const resultado = {
+            resumo_geral: resumoGeral,
+            analise_pontos: analiseEpontos,
+            analises_questionarios: {}
+        };
+
+        // Mapear análises dos questionários pelos seus títulos
+        const questionariosArray = Object.entries(questionariosDados);
+        questionariosArray.forEach(([key, dados], idx) => {
+            resultado.analises_questionarios[key] = analisesQuestionarios[idx];
+        });
+
+        console.log(`[IA] ✅ Análises geradas com sucesso`);
+        return resultado;
+
+    } catch (error) {
+        console.error("[IA] Erro ao gerar análises:", error.message);
         return null;
     }
 }
@@ -344,7 +421,11 @@ async function analisarResumoComIA(textoResumo, textoExpectativa, questionariosD
  * @access  Privado (Paciente)
  */
 const salvarResumoSemanal = async (req, res) => {
-    let analiseIA = null; // Começa como nulo
+    let analises = {
+        resumo_geral: null,
+        analise_pontos: null,
+        analises_questionarios: {}
+    };
 
     try {
         const pacienteId = req.paciente.id; // ID do paciente vindo do token
@@ -362,30 +443,35 @@ const salvarResumoSemanal = async (req, res) => {
         const questionariosDados = await obterDadosQuestionariosSemana(pacienteId);
         console.log(`📊 [salvarResumoSemanal] Questionários encontrados: ${Object.keys(questionariosDados).length}`);
 
-        // 3. Chamar a IA (Gemini) ANTES de salvar no banco, com os dados dos questionários
-        console.log(`[IA] Chamando Gemini para analisar o resumo do paciente ID: ${pacienteId} com dados de questionários...`);
-        analiseIA = await analisarResumoComIA(texto_resumo, texto_expectativa, questionariosDados);
+        // 3. Chamar a IA (Gemini) para gerar 3 análises separadas
+        console.log(`[IA] Chamando Gemini para gerar análises do paciente ID: ${pacienteId}...`);
+        const resultado = await analisarResumoComIA(texto_resumo, texto_expectativa, questionariosDados);
 
-        if (!analiseIA) {
+        if (!resultado) {
             console.warn(`[IA] Análise do Gemini falhou. Salvando resumo sem ela.`);
         } else {
-            console.log(`[IA] ✅ Análise gerada com sucesso!`);
+            console.log(`[IA] ✅ Análises geradas com sucesso!`);
+            analises = resultado;
         }
 
-        // 4. Salvar no banco
+        // 4. Salvar no banco com as 3 análises
         const query = `
             INSERT INTO resumos_semanais 
-                (paciente_id, data_fim_semana, texto_resumo, texto_expectativa, analise_ia)
+                (paciente_id, data_fim_semana, texto_resumo, texto_expectativa, analise_ia, resumo_geral, analise_pontos, analises_questionarios)
             VALUES 
-                ($1, CURRENT_DATE, $2, $3, $4)
+                ($1, CURRENT_DATE, $2, $3, $4, $5, $6, $7)
             RETURNING *;
         `;
         
+        // Usar a análise de pontos como analise_ia para compatibilidade
         const values = [
             pacienteId,
             texto_resumo,
             texto_expectativa,
-            analiseIA // Salva a análise da IA (ou null se tiver falhado)
+            analises.analise_pontos || null, // Retrocompatibilidade
+            analises.resumo_geral || null,
+            analises.analise_pontos || null,
+            JSON.stringify(analises.analises_questionarios) // Salvar como JSON
         ];
         
         const result = await db.query(query, values);

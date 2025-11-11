@@ -297,31 +297,45 @@ export default function RelatorioSemanal({ pacienteId, token, onVoltar }) {
           )}
         </div>
 
-        {/* Análise e Pontos de Atenção */}
+        {/* Resumo Geral da Semana */}
         <div className="bg-white rounded-lg shadow-md border border-slate-200 p-6 hover:shadow-lg transition">
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-2">
-              <div className="p-2 bg-amber-100 rounded-lg">
-                <AlertTriangle className="text-amber-600" size={18} />
-              </div>
-              <h2 className="font-bold text-slate-900">Análise e Pontos de Atenção</h2>
+          <div className="flex items-center gap-2 mb-4">
+            <div className="p-2 bg-blue-100 rounded-lg">
+              <FileText className="text-blue-600" size={18} />
             </div>
-            {!analiseIA && (
-              <button
-                onClick={gerarAnaliseIA}
-                disabled={gerando}
-                className="px-3 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50 flex items-center gap-2 font-medium transition text-sm"
-              >
-                {gerando && <Loader className="animate-spin" size={16} />}
-                {gerando ? 'Gerando...' : 'Gerar com IA'}
-              </button>
-            )}
+            <h2 className="font-bold text-slate-900">Resumo Geral da Semana</h2>
           </div>
 
-          {analiseIA ? (
+          {relatorio.resumo_semanal?.resumo_geral ? (
             <div className="bg-slate-50 p-6 rounded-lg border border-slate-200">
-              <div className="text-slate-800 leading-relaxed space-y-3 text-sm whitespace-pre-wrap">
-                {analiseIA}
+              <div className="text-slate-800 leading-relaxed space-y-3 text-sm">
+                {relatorio.resumo_semanal.resumo_geral}
+              </div>
+              <div className="mt-4 text-xs text-slate-600 border-t border-slate-200 pt-3">
+                <p>✨ Resumo gerado com IA</p>
+              </div>
+            </div>
+          ) : (
+            <div className="bg-slate-50 p-6 rounded-lg border border-dashed border-slate-300 text-center">
+              <Info className="mx-auto mb-3 text-slate-400" size={32} />
+              <p className="text-slate-600 font-medium text-sm">Nenhum resumo disponível</p>
+            </div>
+          )}
+        </div>
+
+        {/* Análise e Pontos de Atenção */}
+        <div className="bg-white rounded-lg shadow-md border border-slate-200 p-6 hover:shadow-lg transition">
+          <div className="flex items-center gap-2 mb-4">
+            <div className="p-2 bg-amber-100 rounded-lg">
+              <AlertTriangle className="text-amber-600" size={18} />
+            </div>
+            <h2 className="font-bold text-slate-900">Análise e Pontos de Atenção</h2>
+          </div>
+
+          {relatorio.resumo_semanal?.analise_pontos ? (
+            <div className="bg-slate-50 p-6 rounded-lg border border-slate-200">
+              <div className="text-slate-800 leading-relaxed space-y-3 text-sm">
+                {relatorio.resumo_semanal.analise_pontos}
               </div>
               <div className="mt-4 text-xs text-slate-600 border-t border-slate-200 pt-3">
                 <p>✨ Análise gerada com IA - Consulte seu psicólogo para discussão aprofundada.</p>
@@ -331,16 +345,14 @@ export default function RelatorioSemanal({ pacienteId, token, onVoltar }) {
             <div className="bg-slate-50 p-8 rounded-lg border border-dashed border-slate-300 text-center">
               <AlertTriangle className="mx-auto mb-3 text-slate-400" size={32} />
               <p className="text-slate-700 font-medium text-sm mb-2">
-                Clique em "Gerar com IA" para análise personalizada
+                Nenhuma análise disponível
               </p>
               <p className="text-slate-500 text-xs">
-                com insights baseados em seus questionários
+                Envie um resumo semanal para gerar análises com IA
               </p>
             </div>
           )}
         </div>
-
-        {/* Detalhes dos Questionários */}
         <div className="bg-white rounded-lg shadow-md border border-slate-200 p-6 hover:shadow-lg transition">
           <div className="flex items-center gap-2 mb-4">
             <div className="p-2 bg-emerald-100 rounded-lg">
@@ -403,7 +415,7 @@ export default function RelatorioSemanal({ pacienteId, token, onVoltar }) {
           </div>
         </div>
 
-        {/* Resumo Individual de Cada Questionário */}
+        {/* Análise Individual de Cada Questionário */}
         <div className="space-y-4">
           <h2 className="font-bold text-slate-900 flex items-center gap-2">
             <div className="p-2 bg-purple-100 rounded-lg">
@@ -413,36 +425,56 @@ export default function RelatorioSemanal({ pacienteId, token, onVoltar }) {
           </h2>
           
           <div className="grid grid-cols-1 gap-4">
-            {relatorio.questionarios.map((q, idx) => (
-              <div key={idx} className="bg-white rounded-lg border border-slate-200 p-6 hover:shadow-lg transition">
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="w-4 h-4 rounded-full" style={{ backgroundColor: q.cor }}></div>
-                  <h3 className="font-bold text-slate-900">{q.titulo}</h3>
-                  <span className="ml-auto text-xs font-medium px-3 py-1 rounded-full" style={{ backgroundColor: q.cor + '20', color: q.cor }}>
-                    {q.severidade}
-                  </span>
-                </div>
-                
-                <div className="bg-slate-50 p-4 rounded-lg border-l-4 mb-4" style={{ borderColor: q.cor }}>
-                  <p className="text-slate-800 leading-relaxed text-sm">
-                    {q.analise || `Sua pontuação neste questionário foi de ${q.score_atual} de ${q.max_possivel} pontos, correspondendo a ${q.percentual}% de conclusão. Este resultado indica ${q.severidade.toLowerCase()} nesta área de avaliação.`}
-                  </p>
-                </div>
+            {relatorio.questionarios.map((q, idx) => {
+              // Tentar buscar análise IA individual por chave do questionário
+              const analisesQuestionarios = relatorio.resumo_semanal?.analises_questionarios 
+                ? (typeof relatorio.resumo_semanal.analises_questionarios === 'string' 
+                    ? JSON.parse(relatorio.resumo_semanal.analises_questionarios)
+                    : relatorio.resumo_semanal.analises_questionarios)
+                : {};
+              
+              const analiseIndividual = analisesQuestionarios[q.chave] || null;
 
-                <div className="grid grid-cols-2 gap-4 text-sm">
-                  <div>
-                    <p className="text-slate-600 font-medium mb-1">Status Atual</p>
-                    <p className="text-lg font-bold" style={{ color: q.cor }}>{q.score_atual}/{q.max_possivel}</p>
+              return (
+                <div key={idx} className="bg-white rounded-lg border border-slate-200 p-6 hover:shadow-lg transition">
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className="w-4 h-4 rounded-full" style={{ backgroundColor: q.cor }}></div>
+                    <h3 className="font-bold text-slate-900">{q.titulo}</h3>
+                    <span className="ml-auto text-xs font-medium px-3 py-1 rounded-full" style={{ backgroundColor: q.cor + '20', color: q.cor }}>
+                      {q.severidade}
+                    </span>
                   </div>
-                  <div>
-                    <p className="text-slate-600 font-medium mb-1">Tendência</p>
-                    <p className="text-xs text-slate-600">
-                      {q.score_atual > q.score_medio ? '📈 Acima da média' : q.score_atual < q.score_medio ? '📉 Abaixo da média' : '➡️ Dentro da média'}
-                    </p>
+                  
+                  {/* Análise Individual (IA) */}
+                  {analiseIndividual ? (
+                    <div className="bg-slate-50 p-4 rounded-lg border-l-4 mb-4" style={{ borderColor: q.cor }}>
+                      <p className="text-slate-800 leading-relaxed text-sm">
+                        {analiseIndividual}
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="bg-slate-50 p-4 rounded-lg border-l-4 mb-4" style={{ borderColor: q.cor }}>
+                      <p className="text-slate-700 leading-relaxed text-sm">
+                        Sua pontuação neste questionário foi de <strong>{q.score_atual}</strong> de <strong>{q.max_possivel}</strong> pontos, correspondendo a <strong>{q.percentual}%</strong> de conclusão. Este resultado indica <strong>{q.severidade.toLowerCase()}</strong> nesta área de avaliação.
+                      </p>
+                    </div>
+                  )}
+
+                  <div className="grid grid-cols-2 gap-4 text-sm">
+                    <div>
+                      <p className="text-slate-600 font-medium mb-1">Status Atual</p>
+                      <p className="text-lg font-bold" style={{ color: q.cor }}>{q.score_atual}/{q.max_possivel}</p>
+                    </div>
+                    <div>
+                      <p className="text-slate-600 font-medium mb-1">Tendência</p>
+                      <p className="text-xs text-slate-600">
+                        {q.score_atual > q.score_medio ? '📈 Acima da média' : q.score_atual < q.score_medio ? '📉 Abaixo da média' : '➡️ Dentro da média'}
+                      </p>
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
 
