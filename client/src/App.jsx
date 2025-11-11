@@ -7,7 +7,7 @@ import {
   Users, LogIn, LogOut, FileText, 
   ChevronRight, Brain, User, KeyRound, ArrowLeft, 
   Settings, Trash2, Edit, UserPlus, Save,
-  BugPlay, AlertCircle, BarChart3, TrendingUp
+  BugPlay, AlertCircle, BarChart3, TrendingUp, AlertTriangle
 } from 'lucide-react';
 import TestPanel from './components/TestPanel';
 import { useTestMode } from './contexts/TestModeContext';
@@ -820,105 +820,133 @@ const DashboardPsicologo = () => {
   if (isLoading) return <div className="text-center p-8"><Spinner /> Carregando pacientes...</div>;
 
   return (
-    <div className="min-h-screen bg-slate-50">
-      {/* Header */}
-      <header className="bg-white shadow-sm sticky top-0 z-10 mb-8">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
+      {/* Header Premium */}
+      <header className="bg-gradient-to-r from-indigo-600 via-indigo-700 to-purple-700 text-white shadow-2xl sticky top-0 z-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
-            <div className="flex items-center space-x-3">
-              <Brain className="h-8 w-8 text-indigo-600" />
-              <span className="text-xl font-semibold text-gray-800">PsiDados</span>
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-white/20 rounded-lg backdrop-blur">
+                <Brain className="h-6 w-6" />
+              </div>
+              <div>
+                <h1 className="text-xl font-bold">PsiDados</h1>
+                <p className="text-xs text-indigo-100">Bem-estar psicológico</p>
+              </div>
             </div>
-            <div className="flex items-center space-x-4">
-              <span className="text-gray-600">Olá, {psicologo?.nome || "Profissional"}</span>
-              <Link to="/" className="text-sm font-medium text-indigo-600 hover:text-indigo-800">Sair</Link>
+            <div className="flex items-center gap-6">
+              <div className="text-right hidden md:block">
+                <p className="text-sm font-semibold">{psicologo?.nome || "Profissional"}</p>
+                <p className="text-xs text-indigo-100">{psicologo?.email}</p>
+              </div>
+              <button
+                onClick={() => {
+                  localStorage.removeItem('authPsicologo');
+                  window.location.href = '/';
+                }}
+                className="px-4 py-2 bg-white/20 hover:bg-white/30 text-white rounded-lg text-sm font-semibold transition backdrop-blur"
+              >
+                Sair
+              </button>
             </div>
           </div>
         </div>
       </header>
 
       {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-12">
-        <div className="flex justify-between items-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">Meus Pacientes</h1>
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-12 gap-4">
+          <div>
+            <h2 className="text-4xl font-bold text-slate-900 flex items-center gap-3">
+              <Users className="text-indigo-600" size={32} />
+              Meus Pacientes
+            </h2>
+            <p className="text-slate-600 mt-2">Gerencie seus pacientes e acompanhamentos</p>
+          </div>
           <Link
             to="/psicologo/criar-paciente"
-            className="flex items-center px-4 py-2 bg-indigo-600 text-white rounded-lg font-medium shadow-lg hover:bg-indigo-700 transition-colors"
+            className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-indigo-600 to-indigo-700 text-white rounded-lg font-semibold shadow-lg hover:from-indigo-700 hover:to-indigo-800 transition-all hover:shadow-xl"
           >
-            <UserPlus className="mr-2 h-5 w-5" />
-            Adicionar Paciente
+            <UserPlus size={20} />
+            Novo Paciente
           </Link>
         </div>
         
         {error && (
-          <div className="mb-6 p-4 rounded-lg bg-red-100 text-red-800 border border-red-200 font-medium">
-            {error}
+          <div className="mb-8 bg-red-50 border-2 border-red-200 rounded-xl p-6 flex items-center gap-4">
+            <AlertTriangle className="text-red-600" size={24} />
+            <div>
+              <p className="font-semibold text-red-700">Erro ao carregar pacientes</p>
+              <p className="text-red-600 text-sm mt-1">{error}</p>
+            </div>
           </div>
         )}
         
         {pacientes.length === 0 && !error ? (
-          <div className="bg-white rounded-2xl shadow-lg p-12 text-center border border-slate-200">
-            <Users className="h-16 w-16 text-gray-300 mx-auto mb-4" />
-            <p className="text-gray-500 text-lg">Você ainda não cadastrou nenhum paciente.</p>
-            <p className="text-gray-400 text-sm mt-2">Clique em "Adicionar Paciente" para começar.</p>
+          <div className="bg-white rounded-2xl shadow-lg p-16 text-center border border-slate-200 hover:shadow-xl transition">
+            <Users className="h-16 w-16 text-slate-300 mx-auto mb-4" />
+            <p className="text-slate-700 text-xl font-semibold mb-2">Nenhum paciente cadastrado</p>
+            <p className="text-slate-500 mb-6">Comece adicionando seu primeiro paciente para acompanhá-lo</p>
+            <Link
+              to="/psicologo/criar-paciente"
+              className="inline-flex items-center gap-2 px-6 py-3 bg-indigo-600 text-white rounded-lg font-semibold hover:bg-indigo-700 transition"
+            >
+              <UserPlus size={18} />
+              Criar Primeiro Paciente
+            </Link>
           </div>
         ) : (
-          <div className="bg-white rounded-2xl shadow-lg border border-slate-200 overflow-hidden">
-            <ul className="divide-y divide-gray-200">
-              {pacientes.map((p) => (
-                <li key={p.id}>
-                  <button 
-                    onClick={() => navigate(`/psicologo/paciente/${p.id}/dashboard`)}
-                    className="w-full p-6 text-left hover:bg-slate-50 transition-colors focus:outline-none"
-                  >
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center space-x-4 flex-1">
-                        {/* Avatar */}
-                        <div className={`flex-shrink-0 h-12 w-12 rounded-full ${getAvatarColor(p.nome)} flex items-center justify-center`}>
-                          <span className={`text-xl font-bold ${getAvatarTextColor(p.nome)}`}>
-                            {p.nome.charAt(0).toUpperCase()}
-                          </span>
-                        </div>
-                        {/* Informações */}
-                        <div className="flex-1">
-                          <p className="text-lg font-semibold text-gray-900">{p.nome}</p>
-                          <p className="text-sm text-gray-500">{p.email}</p>
-                        </div>
-                      </div>
-                      {/* Ações */}
-                      <div className="flex items-center space-x-3 ml-4">
-                        <Link 
-                          to={`/psicologo/paciente/${p.id}/dashboard`}
-                          onClick={(e) => e.stopPropagation()}
-                          className="px-3 py-2 text-sm font-medium text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"
-                          title="Ver Detalhes"
-                        >
-                          Ver Detalhes
-                        </Link>
-                        <Link 
-                          to={`/psicologo/paciente/${p.id}/configurar`}
-                          onClick={(e) => e.stopPropagation()}
-                          className="px-3 py-2 text-sm font-medium text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"
-                          title="Configurar Plano"
-                        >
-                          Configurar
-                        </Link>
-                        <button 
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleDelete(p.id);
-                          }}
-                          className="px-3 py-2 text-sm font-medium text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                          title="Eliminar"
-                        >
-                          Eliminar
-                        </button>
-                      </div>
+          <div className="grid grid-cols-1 gap-4">
+            {pacientes.map((p) => (
+              <div
+                key={p.id}
+                className="bg-white rounded-2xl shadow-lg border border-slate-200 p-6 hover:shadow-xl transition-all group cursor-pointer"
+                onClick={() => navigate(`/psicologo/paciente/${p.id}/dashboard`)}
+              >
+                <div className="flex items-center justify-between gap-6">
+                  {/* Avatar + Info */}
+                  <div className="flex items-center gap-4 flex-1 min-w-0">
+                    <div className={`flex-shrink-0 h-14 w-14 rounded-full ${getAvatarColor(p.nome)} flex items-center justify-center shadow-md`}>
+                      <span className={`text-2xl font-bold ${getAvatarTextColor(p.nome)}`}>
+                        {p.nome.charAt(0).toUpperCase()}
+                      </span>
                     </div>
-                  </button>
-                </li>
-              ))}
-            </ul>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-lg font-bold text-slate-900 group-hover:text-indigo-600 transition">{p.nome}</p>
+                      <p className="text-sm text-slate-500 truncate">{p.email}</p>
+                      <p className="text-xs text-slate-400 mt-1">Paciente cadastrado</p>
+                    </div>
+                  </div>
+
+                  {/* Ações */}
+                  <div className="flex items-center gap-2 flex-shrink-0">
+                    <Link 
+                      to={`/psicologo/paciente/${p.id}/dashboard`}
+                      onClick={(e) => e.stopPropagation()}
+                      className="px-4 py-2 bg-blue-50 text-blue-600 rounded-lg font-medium hover:bg-blue-100 transition text-sm"
+                    >
+                      Detalhes
+                    </Link>
+                    <Link 
+                      to={`/psicologo/paciente/${p.id}/configurar`}
+                      onClick={(e) => e.stopPropagation()}
+                      className="px-4 py-2 bg-purple-50 text-purple-600 rounded-lg font-medium hover:bg-purple-100 transition text-sm"
+                    >
+                      Configurar
+                    </Link>
+                    <button 
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDelete(p.id);
+                      }}
+                      className="px-4 py-2 bg-red-50 text-red-600 rounded-lg font-medium hover:bg-red-100 transition text-sm"
+                    >
+                      Eliminar
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ))}
           </div>
         )}
       </main>
