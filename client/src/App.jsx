@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import TestPanel from './components/TestPanel';
 import { useTestMode } from './contexts/TestModeContext';
+import RelatorioSemanal from './components/RelatorioSemanal';
 
 // --- AUTENTICAÇÃO ---
 
@@ -935,6 +936,7 @@ const PacienteDashboard = () => {
   const [paciente, setPaciente] = useState(null);
   const [respostas, setRespostas] = useState([]);
   const [resumos, setResumos] = useState([]);
+  const [mostraRelatorio, setMostraRelatorio] = useState(false);
   
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -1003,6 +1005,17 @@ const PacienteDashboard = () => {
       }, 1500);
     }
   };
+
+  // Se está mostrando relatório, exibir o componente
+  if (mostraRelatorio) {
+    return (
+      <RelatorioSemanal 
+        pacienteId={pacienteId}
+        token={psicologo?.token}
+        onVoltar={() => setMostraRelatorio(false)}
+      />
+    );
+  }
 
   if (isLoading) {
     return <div className="text-center p-8"><Spinner /> Carregando dados do paciente...</div>;
@@ -1086,6 +1099,13 @@ const PacienteDashboard = () => {
           <div className="bg-white rounded-2xl shadow-lg p-8 border border-slate-200">
             <h2 className="text-xl font-bold text-gray-900 mb-4">Ações</h2>
             <div className="space-y-3">
+              <button 
+                onClick={() => setMostraRelatorio(true)}
+                className="w-full text-left py-3 px-4 font-medium rounded-lg text-white bg-indigo-600 hover:bg-indigo-700 transition-colors flex items-center"
+              >
+                <FileText className="mr-2 h-4 w-4" />
+                Ver Relatório Semanal
+              </button>
               <button 
                 onClick={handleEditarPaciente}
                 className="w-full text-left py-3 px-4 font-medium rounded-lg text-slate-700 bg-slate-100 hover:bg-slate-200 transition-colors flex items-center"
